@@ -1,0 +1,15 @@
+{
+  "name": "mentor-match-ai",
+  "version": "1.0.0",
+  "description": "Mentor-Match AI monorepo root",
+  "private": true,
+  "scripts": {
+    "dev": "docker compose up --build",
+    "dev:down": "docker compose down",
+    "dev:clean": "docker compose down -v",
+    "test": "npm --prefix backend test && npm --prefix frontend test",
+    "test:backend": "npm --prefix backend test",
+    "test:frontend": "npm --prefix frontend test",
+    "seed": "npm --prefix backend run seed"
+  }
+}

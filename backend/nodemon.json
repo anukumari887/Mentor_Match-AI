@@ -1,0 +1,6 @@
+{
+  "watch": ["src"],
+  "ext": "js,json",
+  "legacyWatch": true,
+  "ignore": ["src/**/*.test.js", "tests/**", "scripts/**"]
+}
