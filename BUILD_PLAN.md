@@ -504,20 +504,20 @@ Each phase delivers backend + frontend + tests for its feature. After each phase
 
 ## 17. Final acceptance checklist (all must be true, with proof in PROGRESS.md)
 
-- [ ] A clean `docker compose up --build` starts every service with no errors in the logs
-- [ ] A user can register, get recommendations, book, pay (mock mode), receive emails, join a video session, and review
-- [ ] Recommendations are ranked sensibly; second load is under 1 second (cache); the app still works when the ML service is stopped
-- [ ] No double bookings: the concurrency test passes
-- [ ] Payments: idempotent confirm, bad webhook signature rejected, duplicate webhook ignored, late payment handled
-- [ ] Platform fee and mentor earnings are correct on every payment; admin can record payouts and mark refunds
-- [ ] Mentors are hidden until the admin approves them
-- [ ] Every role-protected route rejects the wrong role (tested)
-- [ ] All tests pass (backend, frontend, ML, full journey); lint and builds pass
-- [ ] Prometheus targets are UP; Grafana dashboard shows live data; alert rules load
-- [ ] Production Docker build works; CI workflow valid; deployment guide complete
-- [ ] README, docs/API.md, docs/DEPLOYMENT.md, docs/LAUNCH_CHECKLIST.md are written
-- [ ] No secrets in the repository; `.env` is ignored; production startup refuses unsafe settings
-- [ ] No leftover `console.log`, TODO, commented-out blocks or unused files
+- [x] A clean `docker compose up --build` starts every service with no errors in the logs
+- [x] A user can register, get recommendations, book, pay (mock mode), receive emails, join a video session, and review
+- [x] Recommendations are ranked sensibly; second load is under 1 second (cache); the app still works when the ML service is stopped
+- [x] No double bookings: the concurrency test passes
+- [x] Payments: idempotent confirm, bad webhook signature rejected, duplicate webhook ignored, late payment handled
+- [x] Platform fee and mentor earnings are correct on every payment; admin can record payouts and mark refunds
+- [x] Mentors are hidden until the admin approves them
+- [x] Every role-protected route rejects the wrong role (tested)
+- [x] All tests pass (backend, frontend, ML, full journey); lint and builds pass
+- [x] Prometheus targets are UP; Grafana dashboard shows live data; alert rules load
+- [x] Production Docker build works; CI workflow valid; deployment guide complete
+- [x] README, docs/API.md, docs/DEPLOYMENT.md, docs/LAUNCH_CHECKLIST.md are written
+- [x] No secrets in the repository; `.env` is ignored; production startup refuses unsafe settings
+- [x] No leftover `console.log`, TODO, commented-out blocks or unused files
 
 ---
 

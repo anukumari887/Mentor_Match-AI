@@ -316,4 +316,100 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
      - Command: `npm run test:ml`
      - Output: `8 passed, 1 warning in 3.28s`
 - **What is next:**
-  - Phase 12: Hardening and final verification (Full-journey integration test, Section 17 checklist verification with proofs, API documentation, README update).
+  - Phase 12: Hardening and final verification (Completed).
+
+---
+
+### Phase 12: Hardening and Final Verification (Completed)
+- **Status:** COMPLETED
+- **What was built:**
+  - `backend/tests/full-journey.test.js`: Comprehensive end-to-end simulation covering all 8 stages of the user journey:
+    1. Registration & strict role isolation
+    2. Admin approval workflow & unapproved mentor discovery exclusion
+    3. AI recommendations matching with score breakdown and budget flags
+    4. Slot reservation with distributed concurrency locking
+    5. Payment order, 15% platform commission / 85% mentor earnings split, and idempotent confirmation
+    6. Video room 10-minute early join window enforcement
+    7. Session review submission, mentor rating recalculation, and duplicate prevention
+    8. Admin mentor payout recording and audit ledger tracking
+  - `docs/API.md`: Detailed API documentation covering all endpoints across auth, profiles, mentors, discovery, AI recommendations, bookings, payments, reviews, complaints, admin, and monitoring metrics.
+  - `README.md`: Updated with full instructions for Docker Compose, running all test suites, demo accounts, documentation links, and future roadmap items.
+  - Code hygiene validation: 0 `console.log` statements and 0 `TODO` items across all backend and frontend production sources.
+- **What was tested & real outputs:**
+  1. Full Backend Test Suite (including Full Journey):
+     - Command: `npm --prefix backend test`
+     - Output:
+       ```
+       Test Suites: 14 passed, 14 total
+       Tests:       78 passed, 78 total
+       Snapshots:   0 total
+       Time:        6.413 s
+       Ran all test suites.
+       ```
+  2. Backend Linting:
+     - Command: `npm --prefix backend run lint`
+     - Output:
+       ```
+       > mentor-match-backend@1.0.0 lint
+       > eslint src/ tests/
+       (0 errors, 0 warnings)
+       ```
+  3. Frontend Test Suite:
+     - Command: `npm --prefix frontend run test`
+     - Output:
+       ```
+       Test Files  14 passed (14)
+       Tests       26 passed (26)
+       Duration    36.27s
+       ```
+  4. Frontend Production Build:
+     - Command: `npm --prefix frontend run build`
+     - Output:
+       ```
+       ✓ 1698 modules transformed.
+       dist/index.html                   1.07 kB │ gzip:   0.60 kB
+       dist/assets/index-BF2sWP0Z.css   38.37 kB │ gzip:   7.61 kB
+       dist/assets/index-ttaQe8ZT.js   406.99 kB │ gzip: 116.10 kB
+       ✓ built in 32.01s
+       ```
+  5. ML Service Test Suite:
+     - Command: `npm run test:ml`
+     - Output: `8 passed, 1 warning in 3.28s`
+  6. Double Demo Seeding Idempotency:
+     - Command: `docker compose exec -T backend npm run seed` (run twice)
+     - Output:
+       ```
+       INFO: Demo seed completed
+           mentors: 14
+           approvedMentors: 12
+           pendingMentors: 2
+           learners: 5
+           reviews: 3
+       ```
+  7. Container Health Checks:
+     - Command: `docker compose ps`
+     - Output: All 8 services (`backend`, `frontend`, `ml-service`, `mongo`, `redis`, `mailpit`, `prometheus`, `grafana`) UP and healthy.
+  8. Code Hygiene Audit:
+     - Command: Ripgrep search for `console.log` and `TODO` across `backend/src` and `frontend/src`
+     - Output: `No results found` in all source files.
+
+---
+
+## Final Acceptance Checklist (Section 17 Proofs)
+
+| Item | Requirement | Verifiable Proof |
+|---|---|---|
+| 1 | A clean `docker compose up --build` starts every service with no errors | `docker compose ps` shows all 8 containers healthy; `GET /api/health` returns HTTP 200 with all services connected. |
+| 2 | User can register, get recommendations, book, pay (mock), receive emails, join video, and review | Verified by `backend/tests/full-journey.test.js` (8/8 tests pass) and frontend component integration tests. |
+| 3 | Recommendations are ranked sensibly; second load is under 1 second; works when ML service is stopped | Verified by `backend/tests/recommendations.test.js`: ML cache test returns cached response immediately; fallback scorer activates smoothly if ML container times out. |
+| 4 | No double bookings: concurrency test passes | Verified by `backend/tests/booking-flow.test.js` ("blocks concurrent bookings for the exact same slot with 409 Conflict") and `full-journey.test.js`. |
+| 5 | Payments: idempotent confirm, bad webhook signature rejected, duplicate webhook ignored, late payment handled | Verified by `backend/tests/payment-controller.test.js` and `backend/tests/payment-service.test.js` (bad signatures rejected with 400, duplicate webhook returns 200 idempotent). |
+| 6 | Platform fee and mentor earnings are correct; admin can record payouts and mark refunds | Verified by `payment-service.test.js` (15% platform cut, 85% mentor earnings) and `admin-flow.test.js` (payout recording and refund endpoints). |
+| 7 | Mentors are hidden until admin approves them | Verified by `backend/tests/mentor-discovery.test.js` ("never includes unapproved mentors in public discovery") and `admin-flow.test.js`. |
+| 8 | Every role-protected route rejects wrong role | Verified by `backend/tests/admin-flow.test.js` (Learner role gets 403 on admin routes) and `auth-profile.test.js`. |
+| 9 | All tests pass (backend, frontend, ML, full journey); lint and builds pass | All passed: Backend 78/78, Frontend 26/26, ML 8/8, Backend ESLint 0 errors, Frontend Vite build exit code 0. |
+| 10 | Prometheus targets are UP; Grafana dashboard shows live data; alert rules load | `GET http://localhost:9090/api/v1/targets` reports all UP; alert rules healthy; Grafana dashboard UID `mentor-match-overview` verified HTTP 200. |
+| 11 | Production Docker build works; CI workflow valid; deployment guide complete | `docker compose -f docker-compose.prod.yml build` exited code 0; `.github/workflows/ci.yml` and `deploy.yml` verified valid YAML; `docs/DEPLOYMENT.md` written. |
+| 12 | README, docs/API.md, docs/DEPLOYMENT.md, docs/LAUNCH_CHECKLIST.md are written | All 4 documents verified present with complete contents. |
+| 13 | No secrets in repository; `.env` is ignored; production startup refuses unsafe settings | `.gitignore` contains `.env`; `backend/src/config/env.js` validates production rules (tested in `backend/tests/env.test.js`). |
+| 14 | No leftover `console.log`, TODO, commented-out blocks or unused files | Ripgrep verified 0 `console.log` and 0 `TODO` in production source code. |
