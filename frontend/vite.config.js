@@ -6,6 +6,9 @@ export default defineConfig({
   server: {
     host: true,
     port: 3000,
+    headers: {
+      'Permissions-Policy': 'camera=(self), microphone=(self)'
+    },
     watch: {
       usePolling: true
     }
@@ -13,6 +16,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/test/setup.js'
+    setupFiles: './src/test/setup.js',
+    exclude: ['**/node_modules/**', '**/e2e/**']
   }
 });

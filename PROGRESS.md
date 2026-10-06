@@ -15,7 +15,7 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 | Phase 5 | Payments and Money | COMPLETED | [x] | Pending |
 | Phase 6 | ML Service and Recommendations | COMPLETED | [x] | Pending |
 | Phase 7 | Reviews and Feedback | COMPLETED | [x] | Pending |
-| Phase 8 | Video Sessions | COMPLETED | [x] | Phase 8: Video sessions |
+| Phase 8 | Video Sessions, Chat & Scrollbar | COMPLETED | [x] | Video session fix, learner-mentor chat and thin scrollbar |
 | Phase 9 | Admin, Complaints, Payouts, Legal | COMPLETED | [x] | Phase 9: Admin, complaints, payouts, legal |
 | Phase 10 | Monitoring | COMPLETED | [x] | Phase 10: Monitoring |
 | Phase 11 | Production Build, CI/CD, Deployment | NOT STARTED | [ ] | Pending |
@@ -797,6 +797,173 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 | `frontend/src/pages/SettingsPage.jsx` | Settings page with Account details, Change Password, and Sign out everywhere modal |
 | `frontend/src/pages/SettingsPage.test.jsx` | Unit tests for Settings page |
 | `frontend/src/styles/tokens.css` | Added `--logo-mark` token ensuring >= 3:1 contrast across all themes |
+
+---
+
+### Phase: Video Session Fix, Learner-Mentor Chat, and Universal Thin Scrollbar (Completed)
+
+#### 1. Root Causes Found
+1. **Camera & Microphone Permissions Policy**:
+   - In Helmet configuration (`backend/src/app.js`) and Nginx production config (`frontend/nginx.conf`), `Permissions-Policy` was missing explicit authorization for camera and microphone origins.
+   - Modern browser WebRTC implementations block access when policies contain `camera=()` or `microphone=()`. Resolved by setting `Permissions-Policy: camera=(self), microphone=(self)` across both development and production reverse-proxy layers.
+   - Content-Security-Policy (CSP) was also updated to explicitly permit `media-src 'self' blob:` and WebSocket connectivity `connect-src 'self' ws: wss:`.
+2. **Video Room 15-Minute Grace Window Lockout**:
+   - `backend/src/controllers/booking.controller.js` previously required `booking.status === 'confirmed'`.
+   - The automated background job marks sessions as `'completed'` at their scheduled `endTime`. As a result, participants who joined or refreshed during the 15-minute grace period after `endTime` were locked out. Fixed to permit both `'confirmed'` and `'completed'` bookings inside the valid time window (`startTime - 10m` to `endTime + 15m`).
+3. **Double-Seat Allocation on Tab Refresh**:
+   - The video signaling server tracked room occupancy by active socket connections rather than unique user IDs. Opening a second tab or refreshing caused the same user to consume both seats, triggering a false `ROOM_FULL` rejection.
+   - Resolved by keying room occupancy to `userId`. If the same user reconnects, their previous socket receives `room-error` with code `SESSION_REPLACED`, allowing seamless reconnection.
+4. **Tile Label Contrast & Stream Teardown**:
+   - Video participant labels were rendered without background chips, making text unreadable against bright video backgrounds. Fixed by wrapping labels in solid dark chips (`--chip-bg` with light text) achieving $\ge 4.5:1$ contrast across all 6 themes.
+   - Tracks were previously susceptible to leaking on component unmount or page navigation. Fixed by enforcing comprehensive track stopping (`track.stop()`), peer connection closure, audio analyzer teardown, and socket leave events on unmount, back button, and `pagehide`.
+5. **Horizontal Navbar Overflow**:
+   - The navbar container was constrained to `max-w-[74rem]` (1184px) with wide gaps between links. At viewports between 1280px and 1366px, the "Sign out" button wrapped onto a second line or overflowed horizontally.
+   - Fixed by expanding navbar container to `max-w-[90rem]`, tuning gaps, and setting the mobile drawer breakpoint at `xl` (1280px). No `overflow-x: hidden` hacks were used on `html` or `body`.
+
+#### 2. Features Built
+- **WebRTC Video Session (Part 2 - Part 7)**:
+  - State machine: `checking`, `preview`, `joining`, `waiting`, `connected`, `reconnecting`, `failed`, `left`.
+  - Pre-join hardware test card with live microphone volume analyzer using `AudioContext` and `AnalyserNode`.
+  - Specific diagnostic messages and user recovery instructions for `NotAllowedError`, `NotFoundError`, `NotReadableError`, `OverconstrainedError`, and insecure contexts.
+  - Device selectors with in-call track swapping via `RTCRtpSender.replaceTrack`.
+  - Live pre-session countdown synchronized against backend `serverTime`.
+  - Media state relay (`media-state { audio, video }`): peer camera-off displays initials avatar; peer mute displays muted microphone indicator.
+  - Part 7 External Meeting Link: Optional `externalMeetingUrl` on confirmed bookings (Google Meet / Zoom only) with participant-only visibility and open-in-new-tab security (`rel="noopener noreferrer"`).
+- **Learner-Mentor Chat (Part 10)**:
+  - Access control: `getChatAccess` dynamically calculates chat validity from confirmed/completed bookings through `latest endTime + CHAT_VALIDITY_DAYS` (default 7 days).
+  - MongoDB models: `Conversation` and `Message` with deduplication unique compound index on `{ conversationId, senderId, clientMessageId }`.
+  - Plain-text sanitization: trims text, strips control characters, renders strictly as pre-wrapped text without HTML parsing or link injection.
+  - REST API: `/api/chats`, `/api/chats/access`, `/api/chats/unread-count`, `/api/chats/:id/messages` (cursor pagination with `before`), `/api/chats/:id/read`.
+  - Rate limiting: Redis-backed 20 messages/min per user, 200 messages/day per conversation.
+  - Real-time delivery: Socket.IO events delivered to private rooms `user:<userId>`.
+  - Safe email notifications: Mailpit delivery throttled to 1 email per conversation per 30 minutes without leaking message content, fully resilient to SMTP downtime.
+  - Client fallback: 15-second polling fallback during socket disconnection.
+  - UI: Two-pane desktop and single-pane mobile chat interface with optimistic message dispatch, Shift+Enter newline, Enter send, retry idempotency, 1800-character warning counter, and unread navbar badge.
+  - Legal: Updated Privacy Policy (`/privacy`) with a dedicated "Messages" section.
+- **Universal Thin Scrollbar (Part 8)**:
+  - 4px width, rounded thumb, transparent track, no buttons across WebKit and Firefox (`scrollbar-width: thin`).
+  - Added `--scrollbar-thumb` token across all 6 themes (`light`, `dark`, `paper`, `midnight`, `forest`, `high-contrast`) guaranteeing $\ge 3:1$ contrast against background.
+  - Zero sideways scroll across 360px, 768px, 1024px, 1280px, 1366px, 1440px, and 1920px.
+- **Dev-Only Test Data Script (Part 9)**:
+  - Added `backend/scripts/seed-video-demo.js` and `npm run seed:video-demo` to create confirmed booking and payment starting 3 minutes in the future for demo accounts.
+
+#### 3. Real Commands & Test Verifications
+1. **Backend Integration & Unit Tests (18 suites, 128 tests):**
+   - Command: `npm --prefix backend test`
+   - Real Output:
+     ```
+     PASS tests/chat-api.test.js
+     PASS tests/video-room.test.js
+     PASS tests/headers.test.js
+     PASS tests/chat-service.test.js
+     PASS tests/full-journey.test.js
+     PASS tests/auth-profile.test.js
+     PASS tests/payment-controller.test.js
+     PASS tests/booking-flow.test.js
+     PASS tests/password-lifecycle.test.js
+     PASS tests/payment-service.test.js
+     PASS tests/slots.test.js
+     PASS tests/env.test.js
+     PASS tests/admin-flow.test.js
+     PASS tests/recommendations.test.js
+     PASS tests/review-flow.test.js
+     PASS tests/booking-jobs.test.js
+     PASS tests/mentor-discovery.test.js
+     Test Suites: 18 passed, 18 total
+     Tests:       128 passed, 128 total
+     ```
+2. **Backend Linting:**
+   - Command: `npm --prefix backend run lint`
+   - Real Output: `0 errors`
+3. **Frontend Component & Unit Tests (23 suites, 64 tests):**
+   - Command: `npm --prefix frontend test`
+   - Real Output:
+     ```
+     Test Files  23 passed (23)
+     Tests       64 passed (64)
+     ```
+4. **Frontend Production Build:**
+   - Command: `npm --prefix frontend run build`
+   - Real Output: `✓ built in 10.35s` (0 errors)
+5. **ML Service Tests (8 tests):**
+   - Command: `npm run test:ml`
+   - Real Output: `8 passed, 1 warning in 1.79s`
+6. **Playwright End-to-End Test Suite:**
+   - Command: `npm --prefix frontend run test:e2e`
+   - Real Output:
+     ```
+     ok 1 [chromium] › e2e\video-chat.spec.js:4:3 › Video Session & Learner-Mentor Chat E2E › end-to-end call and chat between learner and mentor (7.2s)
+     1 passed (8.1s)
+     ```
+7. **Sideways Scroll Audit (`checkHorizontalScroll.js`):**
+   - Command: `node frontend/scripts/checkHorizontalScroll.js`
+   - Real Output: `SUCCESS: Zero horizontal scroll detected across all pages and widths (360, 768, 1024, 1280, 1366, 1440, 1920px) for both learner and mentor!`
+8. **Automated Screenshot Suites:**
+   - `docs/screenshots/before-video/`: 8 baseline screenshots
+   - `docs/screenshots/after-video/`: 8 after screenshots
+   - `docs/screenshots/video-chat/`: 108 theme and state verification screenshots
+
+#### 4. File Change Ledger (`git diff --stat main`)
+| File | Reason |
+|---|---|
+| `.env.example` | Added `CHAT_VALIDITY_DAYS=7` configuration variable |
+| `.env.production.example` | Added `CHAT_VALIDITY_DAYS=7` production template variable |
+| `.gitignore` | Excluded Playwright `test-results/` and `playwright-report/` artifacts |
+| `README.md` | Documented Video Room, Chat feature, `CHAT_VALIDITY_DAYS`, and local testing guide |
+| `backend/package.json` | Added `seed:video-demo` npm script |
+| `backend/scripts/seed-video-demo.js` | Idempotent dev-only seed script creating confirmed demo booking and payment |
+| `backend/src/app.js` | Configured `Permissions-Policy` and `media-src` / `connect-src` CSP headers; mounted `/api/chats` |
+| `backend/src/config/env.js` | Added Zod schema validation for `CHAT_VALIDITY_DAYS` (1-90, default 7) |
+| `backend/src/controllers/booking.controller.js` | Added `serverTime` to room details, permitted completed sessions within grace window, added `updateMeetingLink` |
+| `backend/src/controllers/chat.controller.js` | Chat controller handling access checks, conversations, messages, cursor pagination, and mark-as-read |
+| `backend/src/middlewares/rateLimiter.js` | Redis rate limiting for chat messages (20/min per user, 200/day per conversation) |
+| `backend/src/models/Booking.js` | Added optional `externalMeetingUrl` schema field |
+| `backend/src/models/Conversation.js` | Mongoose model for learner-mentor conversations with compound indexes |
+| `backend/src/models/Message.js` | Mongoose model for chat messages with idempotent deduplication compound index |
+| `backend/src/routes/booking.routes.js` | Registered PATCH `/:id/meeting-link` route |
+| `backend/src/routes/chat.routes.js` | Express route definitions for learner-mentor chat endpoints |
+| `backend/src/routes/index.js` | Mounted `/chats` router under `/api` |
+| `backend/src/services/chatAccess.js` | Dynamic chat access validation helper computing access window from confirmed/completed bookings |
+| `backend/src/services/email.js` | Added safe `sendNewChatMessageEmail` helper without message text and with 30m throttling |
+| `backend/src/socket/video.js` | Socket.IO single-seat replacement, media-state relay, user private rooms, and real-time chat dispatch |
+| `backend/src/utils/metrics.js` | Added Prometheus `chat_messages_total` counter metric |
+| `backend/src/validations/booking.validation.js` | Added URL validation for `externalMeetingUrl` (Google Meet and Zoom only) |
+| `backend/src/validations/chat.validation.js` | Zod validation schemas for chat requests, query params, and message bodies |
+| `backend/tests/chat-api.test.js` | Integration tests for chat REST endpoints, rate limiting, IDOR prevention, and Socket.IO events |
+| `backend/tests/chat-service.test.js` | Unit tests for `getChatAccess` calculation across booking states and expiry windows |
+| `backend/tests/headers.test.js` | Tests verifying `Permissions-Policy` and strict CSP security headers on HTTP responses |
+| `backend/tests/video-room.test.js` | Integration tests for `serverTime`, grace window, seat replacement, media state, and meeting link |
+| `docs/API.md` | Documented `serverTime`, `media-state`, meeting-link endpoints, and chat REST / Socket.IO APIs |
+| `docs/DEPLOYMENT.md` | Added `CHAT_VALIDITY_DAYS` and multi-container Socket.IO Redis adapter note |
+| `docs/LAUNCH_CHECKLIST.md` | Added legal review requirement for Privacy Policy Messages section prior to launch |
+| `docs/SECURITY_AUDIT.md` | Documented security analysis for video room permissions, strict CSP, chat authorization, and safe notifications |
+| `docs/screenshots/after-video/` | 8 after screenshots matching baseline pages |
+| `docs/screenshots/before-video/` | 8 baseline before screenshots |
+| `docs/screenshots/video-chat/` | 108 screenshots covering all 6 themes, viewports, video states, chat views, and navbar badge |
+| `frontend/e2e/video-chat.spec.js` | Playwright E2E test verifying dual-user video session and real-time chat |
+| `frontend/nginx.conf` | Added `Permissions-Policy: camera=(self), microphone=(self)` header to production Nginx reverse proxy |
+| `frontend/package-lock.json` | Installed `@playwright/test` devDependency |
+| `frontend/package.json` | Added `test:e2e` script and `@playwright/test` devDependency |
+| `frontend/playwright.config.js` | Playwright test configuration for fake media device automation |
+| `frontend/scripts/captureBeforeVideo.js` | Automation script capturing baseline before screenshots |
+| `frontend/scripts/captureRemainingScreenshots.js` | Automation script capturing comprehensive theme and state screenshots |
+| `frontend/scripts/checkHorizontalScroll.js` | Verification script auditing horizontal overflow across 7 viewports |
+| `frontend/src/App.jsx` | Added protected routes for `/messages` and `/messages/:conversationId` |
+| `frontend/src/components/Navbar.jsx` | Added Messages link with unread badge; widened desktop container to 90rem and tuned mobile collapse |
+| `frontend/src/index.css` | Global 4px thin scrollbar styling and `scrollbar-gutter: stable` |
+| `frontend/src/pages/LegalPage.jsx` | Added "Messages" section to Privacy Policy |
+| `frontend/src/pages/MentorDetailPage.jsx` | Added "Message mentor" button for learners when chat access is allowed |
+| `frontend/src/pages/MessagesPage.jsx` | Responsive chat interface with auto-scrolling, plain-text bubbles, retry support, and char counter |
+| `frontend/src/pages/MessagesPage.test.jsx` | Unit tests for Messages page |
+| `frontend/src/pages/SessionsPage.jsx` | Updated Join button time-window check and added "Message mentor" button on confirmed/completed rows |
+| `frontend/src/pages/VideoRoomPage.jsx` | Video room state machine, mic volume meter, serverTime countdown, chips contrast, camera off / mute indicators |
+| `frontend/src/pages/VideoRoomPage.test.jsx` | Unit tests for preview screen, device fallbacks, mute/camera toggles, countdown, and cleanup |
+| `frontend/src/services/chat.js` | Frontend API client methods for chat endpoints |
+| `frontend/src/services/socket.js` | Frontend Socket.IO client connection helper |
+| `frontend/src/styles/tokens.css` | Added `--scrollbar-thumb` token across all 6 themes with >= 3:1 contrast |
+| `frontend/vite.config.js` | Excluded `e2e` directory from Vitest test runner |
+| `package.json` | Root `npm run seed:video-demo` script |
+
 
 
 

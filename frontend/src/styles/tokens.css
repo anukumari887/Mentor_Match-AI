@@ -35,6 +35,7 @@
   --focus-ring: #9c3820;
   --badge-bg: #f3f0ec;
   --badge-text: #181716;
+  --scrollbar-thumb: #8c847a;
   --logo-mark: var(--accent);
   --img-dim: brightness(1);
 }
@@ -65,6 +66,7 @@
   --focus-ring: #e07a5f;
   --badge-bg: #2b2b30;
   --badge-text: #eeedf0;
+  --scrollbar-thumb: #6b6b7a;
   --img-dim: brightness(0.85) contrast(0.96);
 }
 
@@ -94,6 +96,7 @@
   --focus-ring: #854823;
   --badge-bg: #ece4d5;
   --badge-text: #2a221b;
+  --scrollbar-thumb: #7d6e5e;
   --img-dim: brightness(0.98);
 }
 
@@ -123,6 +126,7 @@
   --focus-ring: #4ba3e3;
   --badge-bg: #1c2c46;
   --badge-text: #e3ebf7;
+  --scrollbar-thumb: #5072aa;
   --img-dim: brightness(0.84) contrast(0.96);
 }
 
@@ -152,6 +156,7 @@
   --focus-ring: #246b46;
   --badge-bg: #e5eee5;
   --badge-text: #162719;
+  --scrollbar-thumb: #6f8872;
   --img-dim: brightness(0.98);
 }
 
@@ -181,6 +186,7 @@
   --focus-ring: #000000;
   --badge-bg: #f2f2f2;
   --badge-text: #000000;
+  --scrollbar-thumb: #000000;
   --img-dim: brightness(1) contrast(1.05);
 }
 

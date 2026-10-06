@@ -14,7 +14,8 @@ const {
   bookingIdSchema,
   createBookingSchema,
   bookingQuerySchema,
-  cancelBookingSchema
+  cancelBookingSchema,
+  meetingLinkSchema
 } = require('../validations/booking.validation');
 const { mentorIdSchema } = require('../validations/mentor.validation');
 const { AppError } = require('../utils/errors');
@@ -245,12 +246,43 @@ async function getRoomDetails(req, res, next) {
     const opensAt = new Date(new Date(booking.startTime).getTime() - 10 * 60 * 1000);
     const closesAt = new Date(new Date(booking.endTime).getTime() + 15 * 60 * 1000);
     const now = new Date();
-    const canJoin = booking.status === 'confirmed' && now >= opensAt && now <= closesAt;
+    const canJoin = ['confirmed', 'completed'].includes(booking.status) && now >= opensAt && now <= closesAt;
     return res.status(200).json({
       canJoin,
       opensAt: opensAt.toISOString(),
       closesAt: closesAt.toISOString(),
-      iceServers: getIceServers()
+      iceServers: getIceServers(),
+      serverTime: now.toISOString()
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function updateMeetingLink(req, res, next) {
+  try {
+    const { id } = bookingIdSchema.parse(req.params);
+    const { externalMeetingUrl } = meetingLinkSchema.parse(req.body);
+
+    const booking = await Booking.findById(id);
+    if (!booking) return next(new AppError('Booking not found.', 404, 'NOT_FOUND'));
+
+    if (String(booking.mentorId) !== String(req.user._id)) {
+      return next(new AppError('Only the mentor of this session can update the meeting link.', 403, 'FORBIDDEN'));
+    }
+
+    if (booking.status !== 'confirmed') {
+      return next(new AppError('Meeting link can only be set for confirmed bookings.', 400, 'BOOKING_NOT_CONFIRMED'));
+    }
+
+    booking.externalMeetingUrl = externalMeetingUrl;
+    await booking.save();
+
+    return res.status(200).json({
+      booking: {
+        _id: booking._id,
+        externalMeetingUrl: booking.externalMeetingUrl
+      }
     });
   } catch (error) {
     return next(error);
@@ -308,6 +340,7 @@ module.exports = {
   listBookings,
   getBooking,
   getRoomDetails,
+  updateMeetingLink,
   cancelBooking,
   slotLockKey,
   acquireSlotLock,

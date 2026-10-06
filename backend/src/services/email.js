@@ -134,11 +134,38 @@ async function sendPasswordResetEmail(user, token) {
   return sendEmail({ to: user.email, subject, text, html });
 }
 
+function sendChatMessageEmail({ recipient, senderName, conversationId }) {
+  const safeSender = escapeHtml(senderName || 'a user');
+  const safeRecipient = escapeHtml(recipient?.name || 'there');
+  const messagesUrl = `${env.PUBLIC_APP_URL}/messages/${conversationId}`;
+  const subject = `You have a new message from ${senderName}`;
+  const text = `Hello ${recipient?.name || 'there'},\n\nYou have a new message from ${senderName} on Mentor-Match.\n\nRead your message here: ${messagesUrl}\n`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1f2937; max-width: 560px; margin: 0 auto; padding: 24px;">
+      <div style="font-family: Georgia, serif; font-size: 22px; font-weight: bold; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 20px;">
+        Mentor-Match
+      </div>
+      <p style="font-size: 15px; margin-bottom: 16px;">Hello ${safeRecipient},</p>
+      <p style="font-size: 15px; margin-bottom: 16px;">You have a new message from <strong>${safeSender}</strong>.</p>
+      <div style="margin-bottom: 24px;">
+        <a href="${messagesUrl}" style="background-color: #0f766e; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block;">
+          View message thread
+        </a>
+      </div>
+      <p style="font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+        Mentor-Match Technical Mentorship Platform
+      </p>
+    </div>
+  `;
+  return sendEmail({ to: recipient?.email, subject, text, html });
+}
+
 module.exports = {
   sendBookingConfirmation,
   sendBookingCancellation,
   sendSessionReminder,
   sendReviewRequest,
   sendPasswordChangedEmail,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendChatMessageEmail
 };

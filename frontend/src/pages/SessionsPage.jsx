@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
   CalendarDays,
   CheckCircle2,
   Clock,
+  MessageSquare,
   Star,
   Video,
   X
@@ -13,6 +14,7 @@ import { cancelBooking, listBookings } from '../services/mentors';
 import { useAuth } from '../contexts/AuthContext';
 import { submitReview } from '../services/reviews';
 import { submitComplaint } from '../services/admin';
+import { createConversation, getChatAccess } from '../services/chat';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Avatar from '../components/Avatar';
@@ -42,6 +44,7 @@ function formatSessionTime(value) {
 
 export default function SessionsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,17 +60,92 @@ export default function SessionsPage() {
   const [complaintDescription, setComplaintDescription] = useState('');
   const [complaintSuccessId, setComplaintSuccessId] = useState('');
   const [refresh, setRefresh] = useState(0);
+  const [chatAccessMap, setChatAccessMap] = useState({});
+  const [startingChatId, setStartingChatId] = useState('');
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError('');
     listBookings()
-      .then((data) => { if (active) setBookings(data); })
+      .then((data) => {
+        if (!active) return;
+        setBookings(data);
+        if (user?.role === 'learner') {
+          const mentorIds = [
+            ...new Set(
+              data
+                .filter((b) => ['confirmed', 'completed'].includes(b.status))
+                .map((b) => b.mentorId?._id || b.mentorId)
+                .filter(Boolean)
+            )
+          ];
+          mentorIds.forEach((mid) => {
+            getChatAccess(mid)
+              .then((access) => {
+                if (active) setChatAccessMap((prev) => ({ ...prev, [mid]: access }));
+              })
+              .catch(() => {});
+          });
+        }
+      })
       .catch((requestError) => { if (active) setError(requestError.message || 'Your sessions could not be loaded.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [refresh]);
+
+  const handleMessageMentor = async (mentorId) => {
+    setStartingChatId(mentorId);
+    setError('');
+    try {
+      const conv = await createConversation(mentorId);
+      const convId = conv?._id || conv?.conversation?._id;
+      navigate(`/messages/${convId}`);
+    } catch (requestError) {
+      setError(requestError.message || 'Could not open conversation with mentor.');
+    } finally {
+      setStartingChatId('');
+    }
+  };
+
+  const renderJoinButton = (booking) => {
+    if (!['confirmed', 'completed'].includes(booking.status)) return null;
+
+    const nowTime = Date.now();
+    const opensAt = new Date(booking.startTime).getTime() - 10 * 60 * 1000;
+    const closesAt = new Date(booking.endTime).getTime() + 15 * 60 * 1000;
+
+    if (nowTime > closesAt) return null;
+
+    if (nowTime < opensAt) {
+      const opensAtFormatted = new Intl.DateTimeFormat(undefined, {
+        hour: 'numeric',
+        minute: '2-digit'
+      }).format(new Date(opensAt));
+
+      return (
+        <div className="inline-flex items-center gap-1.5">
+          <span className="text-[11px] text-ink-muted">Opens at {opensAtFormatted}</span>
+          <button
+            disabled
+            className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink-muted opacity-50 cursor-not-allowed"
+            type="button"
+          >
+            <Video size={13} /> Join session
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        className="inline-flex items-center gap-1.5 rounded bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-text hover:bg-accent-hover transition-colors shadow-sm"
+        to={`/session/${booking._id}`}
+      >
+        <Video size={13} /> Join session
+      </Link>
+    );
+  };
 
   const now = Date.now();
   const visibleBookings = activeTab === 'cancelled'
@@ -323,14 +401,23 @@ export default function SessionsPage() {
                         Review hold
                       </Link>
                     )}
-                    {booking.status === 'confirmed' && (
-                      <Link
-                        className="inline-flex items-center gap-1.5 rounded bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-text hover:bg-accent-hover transition-colors shadow-sm"
-                        to={`/session/${booking._id}`}
-                      >
-                        <Video size={13} /> Join session
-                      </Link>
-                    )}
+                    {renderJoinButton(booking)}
+                    {user?.role === 'learner' && ['confirmed', 'completed'].includes(booking.status) && (() => {
+                      const mentorId = booking.mentorId?._id || booking.mentorId;
+                      const access = chatAccessMap[mentorId];
+                      if (!access?.allowed) return null;
+
+                      return (
+                        <button
+                          className="inline-flex items-center gap-1 rounded border border-accent/40 bg-accent/5 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/10 transition-colors"
+                          disabled={startingChatId === mentorId}
+                          onClick={() => handleMessageMentor(mentorId)}
+                          type="button"
+                        >
+                          <MessageSquare size={12} /> Message mentor
+                        </button>
+                      );
+                    })()}
                     {activeTab === 'past' && user?.role === 'learner' && booking.status === 'completed' && !booking.hasReview && (
                       <button
                         className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised transition-colors"

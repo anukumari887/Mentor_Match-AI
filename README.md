@@ -10,7 +10,9 @@ Mentor-Match AI is a full-stack web platform where learners find their best-fit 
 - **Conflict-Free Booking:** Two-tier slot reservation using high-speed Redis distributed locks backed by MongoDB unique partial indexes.
 - **Monetization & Commission:** 15% platform fee split calculated automatically per booking with ledger-tracked mentor earnings and admin payouts.
 - **Dual Payment Gateways:** Zero-dependency built-in mock gateway for local development and official Razorpay adapter with raw-body HMAC webhook signature validation.
-- **In-Browser Video Sessions:** Peer-to-peer WebRTC video calling mediated by authenticated Socket.IO signaling with join-window enforcement.
+- **In-Browser Video Sessions (WebRTC):** Peer-to-peer WebRTC video calling with pre-call preview check, live mic volume analyzer, error diagnostics, auto-enabling countdown computed from server time, single-seat per user replacement, camera-off avatars, muted indicators, and optional mentor backup meeting link (Google Meet / Zoom).
+- **Learner-Mentor Chat:** Secure, direct messaging between learners and mentors with paid bookings. Instant Socket.IO delivery to private user rooms, offline 15-second polling fallback, rate limiting (20/min), offline notification emails via Mailpit without message text leakage, and access window governed by `CHAT_VALIDITY_DAYS`.
+- **Ultra-Thin Themed Scrollbars:** 4px custom scrollbars styled with high-contrast tokens ($\ge 3:1$ across all 6 themes), zero horizontal overflow, and responsive navbar layout.
 - **Role-Based Access Control:** Separate optimized portals for **Learners**, **Mentors**, and **Admins**.
 - **Account Security & Password Settings:** Dedicated Settings portal (`/settings`) for all three roles with secure password change (invalidating other active sessions), universal "Sign out of all devices", and cryptographic token-based "Forgot password" flow (`/forgot-password`, `/reset-password`).
 - **Mentor Approval & Payment Transparency:** Pre-approval status tracking banner for onboarding mentors with a live missing-items checklist, alongside learner payment and refund status tracking across session bookings.
@@ -18,97 +20,39 @@ Mentor-Match AI is a full-stack web platform where learners find their best-fit 
 
 ---
 
-## Architecture Overview
+## Testing Video and Chat Locally
 
-- **Frontend:** React + Vite + Tailwind CSS + React Router + Axios (Port `3000`)
-- **Backend:** Node.js 22 LTS + Express 5 + Mongoose + Zod + Socket.IO + Pino (Port `5000`)
-- **ML Service:** Python 3.13 + FastAPI + Scikit-Learn + Pydantic v2 (Port `8000`)
-- **Database:** MongoDB 7 (`mongo:27017`)
-- **Cache & Locks:** Redis 7 Alpine (`redis:6379`)
-- **Local Mailcatcher:** Mailpit (`http://localhost:8025` web UI, `1025` SMTP)
-- **Monitoring:** Prometheus (`9090`) + Grafana (`3001`)
+To immediately test both the video call and chat features without going through the booking and checkout flow:
 
----
-
-## Quickstart (Development with Docker)
-
-### Prerequisites
-- Docker Desktop with Compose v2 (`docker compose`)
-- Node.js 22+ (for local test execution)
-
-### 1. Clone & Configure
 ```bash
-git clone <repo-url> mentor-match-ai
-cd mentor-match-ai
-cp .env.example .env
+# 1. Ensure docker services are running
+docker compose up -d
+
+# 2. Seed an immediate active demo booking and chat access
+npm run seed:video-demo
 ```
 
-### 2. Start Services
-```bash
-# Core application stack
-docker compose up --build
+This idempotent script creates:
+- An active `confirmed` booking starting in 3 minutes (so the 10-minute early window is immediately open) and ending in 63 minutes.
+- Verified payment status for the session.
+- Immediate chat access between `learner01@mentormatch.local` and `mentor01@mentormatch.local`.
 
-# Or with full monitoring stack (Prometheus & Grafana)
-docker compose --profile monitoring up --build
-```
+### Testing Steps:
+1. **Video Call:**
+   - Open a browser window and sign in as `learner01@mentormatch.local` (`Demo@12345`). Go to **My sessions** and click **Join session** (or navigate to the printed session URL).
+   - In a private/incognito window, sign in as `mentor01@mentormatch.local` (`Demo@12345`). Go to **Sessions** and click **Join session**.
+   - On the preview card, click **Allow camera and microphone**. The live video and mic meter will activate.
+   - Click **Join session** in both windows. Both participants will connect via WebRTC.
+   - Test **Mute/Unmute**, **Camera off/on**, and **Leave session**.
+2. **Real-Time Chat:**
+   - On the learner's sessions or mentor detail page, click **Message mentor**.
+   - Type a message and press <kbd>Enter</kbd> (or <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line).
+   - In the mentor window, open the **Messages** link in the navbar (notice the live unread badge). The message appears in real time.
+   - Reply as the mentor; the reply immediately renders on the learner's screen without a page refresh.
+   - If the recipient's window is closed, inspect Mailpit at [http://localhost:8025](http://localhost:8025) to see the privacy-safe notification email (contains link only, no message text).
 
-### 3. Load Local Demo Data
-With the Compose services running, open another terminal in the project folder and run:
-```bash
-npm run seed
-```
-The seed is safe to run more than once. It creates learner and mentor profiles, three completed sample sessions with reviews, twelve approved mentors, and two pending mentor applications.
-
-### 4. Access Services
-- **Web Application:** [http://localhost:3000](http://localhost:3000)
-- **Backend Health Check:** [http://localhost:5000/api/health](http://localhost:5000/api/health)
-- **Mailpit Web Inbox:** [http://localhost:8025](http://localhost:8025)
-- **ML Service Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Prometheus UI:** [http://localhost:9090](http://localhost:9090)
-- **Grafana Dashboard:** [http://localhost:3001](http://localhost:3001) (default login: `admin` / `admin`)
-
----
-
-## Running Tests
-
-Run all unit, integration, and ML tests locally:
-```bash
-# Run all test suites
-npm test
-
-# Run backend unit, integration, and full-journey tests (15 suites, 94 tests)
-npm --prefix backend test
-
-# Run backend ESLint check
-npm --prefix backend run lint
-
-# Run frontend Vitest suite (22 suites, 52 tests)
-npm --prefix frontend run test
-
-# Run frontend production bundle build
-npm --prefix frontend run build
-
-# Run ML service Pytest suite (8 tests)
-npm run test:ml
-```
-
----
-
-## Demo Accounts (Local Only)
-
-- **Learners:** `learner01@mentormatch.local` through `learner05@mentormatch.local`
-- **Mentors:** `mentor01@mentormatch.local` through `mentor14@mentormatch.local` (mentors 13 and 14 are pending approval)
-- **Password for all seeded users:** `Demo@12345`
-- **Admin Account:** `admin@mentormatch.local` (Password: value of `ADMIN_PASSWORD` in `.env`, default `ChangeMe123!`)
-
----
-
-## Video Session Check (Local)
-
-- Camera and microphone access is available on `localhost` or over HTTPS. Allow both permissions when the browser asks.
-- Sign in as the learner and mentor in two separate browser profiles. Book and confirm a mock-payment session; the room opens 10 minutes before its start and closes 15 minutes after its end.
-- Open **My sessions** in both profiles and choose **Join session**. Use the mute, camera, and leave controls during the call.
-- Use separate participants; joining with anyone outside the booking or after the room is full is rejected.
+### Environment Configuration:
+- `CHAT_VALIDITY_DAYS`: Number of days after the latest session's end time that the learner and mentor can continue sending chat messages (default: `7`, range: `1` to `90`). After this window expires, existing conversation history remains readable, while sending is disabled.
 
 ---
 

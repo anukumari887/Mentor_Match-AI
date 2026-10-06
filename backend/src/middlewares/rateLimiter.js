@@ -104,6 +104,28 @@ const resetPasswordLimiter = createLimiter(
   { prefix: 'rl:rp:' }
 );
 
+// 20 messages per minute per user for chat
+const chatUserLimiter = createLimiter(
+  60 * 1000,
+  20,
+  'You are sending messages too quickly. Please wait a moment.',
+  {
+    prefix: 'rl:chat-usr:',
+    keyGenerator: (req) => req.user?._id ? String(req.user._id) : (req.ip || 'unknown')
+  }
+);
+
+// 200 messages per day per conversation
+const chatConversationLimiter = createLimiter(
+  24 * 60 * 60 * 1000,
+  200,
+  'Daily message limit reached for this conversation. Please continue tomorrow.',
+  {
+    prefix: 'rl:chat-conv:',
+    keyGenerator: (req) => req.params?.id ? String(req.params.id) : (req.ip || 'unknown')
+  }
+);
+
 module.exports = {
   authLimiter,
   paymentLimiter,
@@ -111,5 +133,7 @@ module.exports = {
   changePasswordLimiter,
   forgotPasswordIpLimiter,
   forgotPasswordEmailLimiter,
-  resetPasswordLimiter
+  resetPasswordLimiter,
+  chatUserLimiter,
+  chatConversationLimiter
 };

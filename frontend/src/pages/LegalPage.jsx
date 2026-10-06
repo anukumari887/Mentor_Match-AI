@@ -38,6 +38,10 @@ export default function LegalPage() {
       {
         heading: '3. Video & Audio Security',
         body: 'Video consultations occur over encrypted WebRTC peer-to-peer connections. The platform does not record video or audio calls without explicit advance notice and permission.'
+      },
+      {
+        heading: '4. Messages',
+        body: 'Chat messages are stored so both participants can read the conversation history, and they are visible only to the two people in the conversation. We do not read messages as a routine matter, but our safety team may review them if a problem or complaint is reported, or if required by applicable law.'
       }
     ];
   } else if (location.pathname === '/refund-policy') {

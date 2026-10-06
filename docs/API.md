@@ -376,3 +376,178 @@ Queue of mentors awaiting approval.
 
 ### `PATCH /api/admin/mentors/:id/approve`
 Approve or reject a mentor profile.
+
+---
+
+## 11. Video Sessions & WebRTC (`/api/bookings/:id/room`)
+
+### `GET /api/bookings/:id/room`
+Retrieve WebRTC room metadata, join window status, TURN/STUN ICE servers, and synchronized server time.
+- **Auth:** Learner or Mentor belonging to the booking
+- **Status Acceptance:** `confirmed` or `completed`
+- **Join Window:** `startTime - 10 minutes` until `endTime + 15 minutes`
+- **Response `200 OK`**:
+  ```json
+  {
+    "canJoin": true,
+    "opensAt": "2026-10-06T19:00:00.000Z",
+    "closesAt": "2026-10-06T20:15:00.000Z",
+    "serverTime": "2026-10-06T18:55:00.123Z",
+    "iceServers": [
+      { "urls": "stun:stun.l.google.com:19302" }
+    ],
+    "externalMeetingUrl": "https://meet.google.com/abc-defg-hij"
+  }
+  ```
+
+### `PATCH /api/bookings/:id/meeting-link`
+Add or update an optional backup meeting link (Google Meet or Zoom) for the session.
+- **Auth:** Assigned Mentor only (booking status must be `confirmed`)
+- **Body:**
+  ```json
+  {
+    "meetingUrl": "https://meet.google.com/abc-defg-hij"
+  }
+  ```
+- **Validation:** HTTPS only, maximum 300 characters, host must be `meet.google.com`, `zoom.us`, or end with `.zoom.us`.
+
+### Socket.IO Video Signaling (`/`)
+Connected sockets authenticate via JWT cookie and join `room:<bookingId>`. Maximum 2 distinct users per room. If the same user reconnects, the previous socket receives `room-error` with code `SESSION_REPLACED`.
+- **Client Emits:**
+  - `join-room` `{ bookingId }`
+  - `signal` `{ bookingId, signal }` (`offer`, `answer`, or ICE `candidate`)
+  - `media-state` `{ bookingId, audio: boolean, video: boolean }`
+  - `leave-room` `{ bookingId }`
+- **Server Emits:**
+  - `peer-joined` `{ userId, socketId }` (sent strictly to the existing occupant)
+  - `peer-left` `{ userId, socketId }`
+  - `signal` `{ signal, from }`
+  - `media-state` `{ userId, audio, video }`
+  - `room-error` `{ code, message }` (`SESSION_REPLACED`, `ROOM_FULL`, `TIME_WINDOW_CLOSED`, `UNAUTHORIZED`)
+
+---
+
+## 12. Learner-Mentor Chat (`/api/chats`)
+
+Direct plain-text chat between a learner and a mentor with at least one paid (`confirmed` or `completed`) booking. Send access is valid until the latest booking's `endTime + CHAT_VALIDITY_DAYS` days (default 7). Expired chats remain accessible in read-only mode.
+
+### `GET /api/chats/access?mentorId=:id`
+Check whether the authenticated learner has chat permissions with the specified mentor.
+- **Auth:** Learner only
+- **Response `200 OK`**:
+  ```json
+  {
+    "allowed": true,
+    "validUntil": "2026-10-13T20:00:00.000Z",
+    "conversationId": "67a..."
+  }
+  ```
+
+### `POST /api/chats`
+Start a conversation thread with a mentor. Idempotent: returns existing conversation if already created.
+- **Auth:** Learner only
+- **Body:** `{ "mentorId": "67a..." }`
+- **Response `200 OK` / `201 Created`**:
+  ```json
+  {
+    "conversation": {
+      "_id": "67a...",
+      "learnerId": "67a...",
+      "mentorId": "67a...",
+      "lastMessageAt": null,
+      "lastMessagePreview": ""
+    }
+  }
+  ```
+
+### `GET /api/chats`
+List the authenticated user's conversations sorted by newest message.
+- **Auth:** Learner or Mentor (mentors see only threads with $\ge 1$ message)
+- **Response `200 OK`**:
+  ```json
+  {
+    "conversations": [
+      {
+        "_id": "67a...",
+        "otherUser": {
+          "id": "67a...",
+          "name": "Amit Sharma",
+          "role": "mentor"
+        },
+        "lastMessagePreview": "Hello mentor!",
+        "lastMessageAt": "2026-10-06T19:20:00.000Z",
+        "unreadCount": 0,
+        "canSend": true,
+        "validUntil": "2026-10-13T20:00:00.000Z"
+      }
+    ]
+  }
+  ```
+
+### `GET /api/chats/unread-count`
+Total number of unread messages across all conversations for the user.
+- **Auth:** Learner or Mentor
+- **Response `200 OK`**: `{ "unreadCount": 3 }`
+
+### `GET /api/chats/:id/messages?before=<ISO>&limit=<1..50>`
+Retrieve messages in chronological order with cursor pagination (`before` date filter).
+- **Auth:** Participant only (strangers receive 404 `NOT_FOUND` to prevent IDOR enumeration)
+- **Response `200 OK`**:
+  ```json
+  {
+    "messages": [
+      {
+        "_id": "67a...",
+        "conversationId": "67a...",
+        "senderId": "67a...",
+        "senderName": "Aarav Gupta",
+        "body": "Hello mentor!",
+        "createdAt": "2026-10-06T19:20:00.000Z"
+      }
+    ],
+    "hasMore": false,
+    "canSend": true,
+    "validUntil": "2026-10-13T20:00:00.000Z",
+    "otherUser": {
+      "id": "67a...",
+      "name": "Amit Sharma",
+      "role": "mentor"
+    }
+  }
+  ```
+
+### `POST /api/chats/:id/messages`
+Send a plain-text message in the conversation thread.
+- **Auth:** Participant only (active user, within chat validity window)
+- **Rate Limit:** 20 messages/min per user, 200 messages/day per conversation
+- **Body:**
+  ```json
+  {
+    "body": "Can we review the system design diagram tomorrow?",
+    "clientMessageId": "uuid-or-unique-string"
+  }
+  ```
+- **Response `201 Created`**:
+  ```json
+  {
+    "message": {
+      "_id": "67a...",
+      "conversationId": "67a...",
+      "senderId": "67a...",
+      "senderName": "Aarav Gupta",
+      "body": "Can we review the system design diagram tomorrow?",
+      "createdAt": "2026-10-06T19:25:00.000Z"
+    }
+  }
+  ```
+
+### `POST /api/chats/:id/read`
+Mark the conversation thread as read up to current timestamp.
+- **Auth:** Participant only
+- **Response `200 OK`**: `{ "success": true, "readAt": "2026-10-06T19:25:05.000Z" }`
+
+### Socket.IO Real-Time Chat
+Upon socket connection and JWT authentication, sockets join a private room `user:<userId>`.
+- **Server Emits:**
+  - `chat:message` `{ conversationId, message }` (dispatched to private rooms of both participants)
+  - `chat:read` `{ conversationId }` (dispatched to the other participant)

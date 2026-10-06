@@ -41,6 +41,7 @@ const envSchema = z.object({
   TURN_CREDENTIAL: z.string().optional().default(''),
 
   METRICS_TOKEN: z.string().optional().default(''),
+  CHAT_VALIDITY_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   VITE_API_URL: z.string().optional().default('http://localhost:5000'),
   PUBLIC_APP_URL: z.string().url().default('http://localhost:3000')
 });

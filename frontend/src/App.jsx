@@ -16,6 +16,7 @@ import SessionsPage from './pages/SessionsPage';
 import MentorEarningsPage from './pages/MentorEarningsPage';
 import DashboardPage from './pages/DashboardPage';
 import VideoRoomPage from './pages/VideoRoomPage';
+import MessagesPage from './pages/MessagesPage';
 import SettingsPage from './pages/SettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -45,6 +46,8 @@ export default function App() {
               <Route path="checkout/:bookingId" element={<ProtectedRoute roles={['learner']}><CheckoutPage /></ProtectedRoute>} />
               <Route path="sessions" element={<ProtectedRoute roles={['learner', 'mentor']}><SessionsPage /></ProtectedRoute>} />
               <Route path="session/:bookingId" element={<ProtectedRoute roles={['learner', 'mentor']}><VideoRoomPage /></ProtectedRoute>} />
+              <Route path="messages" element={<ProtectedRoute roles={['learner', 'mentor']}><MessagesPage /></ProtectedRoute>} />
+              <Route path="messages/:conversationId" element={<ProtectedRoute roles={['learner', 'mentor']}><MessagesPage /></ProtectedRoute>} />
               <Route path="earnings" element={<ProtectedRoute roles={['mentor']}><MentorEarningsPage /></ProtectedRoute>} />
               <Route path="status" element={<StatusPage />} />
               <Route path="terms" element={<LegalPage />} />

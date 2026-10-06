@@ -17,9 +17,23 @@ const cancelBookingSchema = z.object({
   reason: z.string().trim().max(500).optional()
 }).strict();
 
+const meetingLinkSchema = z.object({
+  externalMeetingUrl: z.string().trim().max(300).refine((val) => {
+    try {
+      const parsed = new URL(val);
+      if (parsed.protocol !== 'https:') return false;
+      const host = parsed.hostname.toLowerCase();
+      return host === 'meet.google.com' || host === 'zoom.us' || host.endsWith('.zoom.us');
+    } catch {
+      return false;
+    }
+  }, 'Meeting URL must be an https URL hosted on meet.google.com, zoom.us, or *.zoom.us.')
+}).strict();
+
 module.exports = {
   bookingIdSchema,
   createBookingSchema,
   bookingQuerySchema,
-  cancelBookingSchema
+  cancelBookingSchema,
+  meetingLinkSchema
 };

@@ -11,6 +11,7 @@
     "test:backend": "npm --prefix backend test",
     "test:frontend": "npm --prefix frontend test",
     "test:ml": "docker compose exec -T ml-service python -m pytest -q -p no:cacheprovider",
-    "seed": "docker compose exec backend npm run seed"
+    "seed": "docker compose exec backend npm run seed",
+    "seed:video-demo": "docker compose exec backend npm run seed:video-demo"
   }
 }

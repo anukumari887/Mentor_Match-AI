@@ -13,6 +13,11 @@ const signalSchema = z.object({
   type: z.enum(['offer', 'answer', 'candidate']),
   data: z.unknown()
 }).strict();
+const mediaStateSchema = z.object({
+  bookingId: bookingIdSchema,
+  audio: z.boolean(),
+  video: z.boolean()
+}).strict();
 
 const JOIN_EARLY_MS = 10 * 60 * 1000;
 const JOIN_LATE_MS = 15 * 60 * 1000;
@@ -36,11 +41,38 @@ function withRoomLock(room, locks, operation) {
   });
 }
 
+let globalIo = null;
+
+function getIo() {
+  return globalIo;
+}
+
 function createVideoServer(httpServer) {
   const io = new Server(httpServer, {
-    cors: { origin: env.CORS_ORIGIN, credentials: true }
+    cors: { origin: env.CORS_ORIGIN, credentials: true },
+    maxHttpBufferSize: 1e5 // 100kb limit
   });
+  globalIo = io;
+
   const roomLocks = new Map();
+  // Map of bookingId -> Map<userId, socketId>
+  const roomUsers = new Map();
+  const socketRateLimits = new Map();
+
+  function checkRateLimit(socket, limit = 150, windowMs = 60000) {
+    const now = Date.now();
+    let entry = socketRateLimits.get(socket.id);
+    if (!entry || now > entry.resetAt) {
+      entry = { count: 0, resetAt: now + windowMs };
+      socketRateLimits.set(socket.id, entry);
+    }
+    entry.count++;
+    if (entry.count > limit) {
+      socket.emit('room-error', { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests. Please slow down.' });
+      return false;
+    }
+    return true;
+  }
 
   io.use(async (socket, next) => {
     try {
@@ -61,7 +93,13 @@ function createVideoServer(httpServer) {
   });
 
   io.on('connection', (socket) => {
+    const userId = String(socket.data.user._id);
     const joinedRooms = new Set();
+    socket.data.joinedRooms = joinedRooms;
+
+    // Join private room for direct user events (Part 10: chat)
+    socket.join(`user:${userId}`);
+
     const emitRoomError = (code, message, ack) => {
       const error = { code, message };
       socket.emit('room-error', error);
@@ -69,6 +107,7 @@ function createVideoServer(httpServer) {
     };
 
     socket.on('join-room', async (payload, ack) => {
+      if (!checkRateLimit(socket)) return;
       const parsed = joinSchema.safeParse(payload);
       if (!parsed.success) return emitRoomError('INVALID_BOOKING', 'A valid booking id is required.', ack);
       const { bookingId } = parsed.data;
@@ -76,11 +115,10 @@ function createVideoServer(httpServer) {
       try {
         const booking = await Booking.findById(bookingId);
         if (!booking) return emitRoomError('BOOKING_NOT_FOUND', 'This session could not be found.', ack);
-        const userId = String(socket.data.user._id);
         if (![String(booking.learnerId), String(booking.mentorId)].includes(userId)) {
           return emitRoomError('NOT_PARTICIPANT', 'You are not part of this session.', ack);
         }
-        if (booking.status !== 'confirmed') {
+        if (!['confirmed', 'completed'].includes(booking.status)) {
           return emitRoomError('BOOKING_NOT_CONFIRMED', 'Only confirmed sessions can be joined.', ack);
         }
         if (!isWithinJoinWindow(booking)) {
@@ -88,13 +126,40 @@ function createVideoServer(httpServer) {
         }
 
         await withRoomLock(bookingId, roomLocks, async () => {
-          const members = io.sockets.adapter.rooms.get(bookingId);
-          if (members?.size >= 2) {
+          let userMap = roomUsers.get(bookingId);
+          if (!userMap) {
+            userMap = new Map();
+            roomUsers.set(bookingId, userMap);
+          }
+
+          // If the same user connects again (second tab or refresh), replace the old connection
+          const existingSocketId = userMap.get(userId);
+          if (existingSocketId && existingSocketId !== socket.id) {
+            const existingSocket = io.sockets.sockets.get(existingSocketId);
+            if (existingSocket) {
+              existingSocket.emit('room-error', {
+                code: 'SESSION_REPLACED',
+                message: 'Session opened in another window or tab.'
+              });
+              await existingSocket.leave(bookingId);
+              if (existingSocket.data?.joinedRooms) {
+                existingSocket.data.joinedRooms.delete(bookingId);
+              }
+            }
+            userMap.delete(userId);
+          }
+
+          // Count distinct people in room
+          if (userMap.size >= 2) {
             emitRoomError('ROOM_FULL', 'This session already has two participants.', ack);
             return;
           }
+
+          userMap.set(userId, socket.id);
           await socket.join(bookingId);
           joinedRooms.add(bookingId);
+
+          // peer-joined is sent ONLY to the person already in the room
           socket.to(bookingId).emit('peer-joined', { userId });
           if (typeof ack === 'function') ack({ ok: true, bookingId });
         });
@@ -104,30 +169,57 @@ function createVideoServer(httpServer) {
     });
 
     socket.on('signal', (payload) => {
+      if (!checkRateLimit(socket)) return;
       const parsed = signalSchema.safeParse(payload);
       if (!parsed.success) return emitRoomError('INVALID_SIGNAL', 'The signaling message is invalid.');
       const { bookingId, type, data } = parsed.data;
       if (!joinedRooms.has(bookingId)) return emitRoomError('NOT_IN_ROOM', 'Join the session before sending signals.');
-      socket.to(bookingId).emit('signal', { type, data, fromUserId: String(socket.data.user._id) });
+      socket.to(bookingId).emit('signal', { type, data, fromUserId: userId });
     });
+
+    socket.on('media-state', (payload) => {
+      if (!checkRateLimit(socket)) return;
+      const parsed = mediaStateSchema.safeParse(payload);
+      if (!parsed.success) return emitRoomError('INVALID_MEDIA_STATE', 'The media state is invalid.');
+      const { bookingId, audio, video } = parsed.data;
+      if (!joinedRooms.has(bookingId)) return emitRoomError('NOT_IN_ROOM', 'Join the session before sending media state.');
+      socket.to(bookingId).emit('media-state', { audio, video, fromUserId: userId });
+    });
+
+    const leaveBooking = async (bookingId) => {
+      if (!joinedRooms.delete(bookingId)) return;
+      await socket.leave(bookingId);
+      const userMap = roomUsers.get(bookingId);
+      if (userMap && userMap.get(userId) === socket.id) {
+        userMap.delete(userId);
+        if (userMap.size === 0) roomUsers.delete(bookingId);
+      }
+      socket.to(bookingId).emit('peer-left', { userId });
+    };
 
     socket.on('leave-room', async (payload) => {
       const parsed = joinSchema.safeParse(payload);
       if (!parsed.success) return;
-      const { bookingId } = parsed.data;
-      if (!joinedRooms.delete(bookingId)) return;
-      await socket.leave(bookingId);
-      socket.to(bookingId).emit('peer-left', { userId: String(socket.data.user._id) });
+      await leaveBooking(parsed.data.bookingId);
     });
 
     socket.on('disconnecting', () => {
-      for (const room of joinedRooms) {
-        socket.to(room).emit('peer-left', { userId: String(socket.data.user._id) });
+      for (const room of Array.from(joinedRooms)) {
+        leaveBooking(room);
       }
+    });
+
+    socket.on('disconnect', () => {
+      socketRateLimits.delete(socket.id);
     });
   });
 
   return io;
 }
 
-module.exports = { createVideoServer, isWithinJoinWindow, withRoomLock };
+module.exports = {
+  createVideoServer,
+  isWithinJoinWindow,
+  withRoomLock,
+  getIo
+};

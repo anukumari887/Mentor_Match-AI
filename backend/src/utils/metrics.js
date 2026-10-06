@@ -40,11 +40,17 @@ const webhookFailuresTotal = new client.Counter({
   help: 'Total number of payment webhook processing failures'
 });
 
+const chatMessagesTotal = new client.Counter({
+  name: 'chat_messages_total',
+  help: 'Total number of chat messages sent'
+});
+
 register.registerMetric(httpRequestDurationMicroseconds);
 register.registerMetric(httpRequestsTotal);
 register.registerMetric(bookingsCreatedTotal);
 register.registerMetric(paymentsConfirmedTotal);
 register.registerMetric(webhookFailuresTotal);
+register.registerMetric(chatMessagesTotal);
 
 module.exports = {
   register,
@@ -52,5 +58,6 @@ module.exports = {
   httpRequestsTotal,
   bookingsCreatedTotal,
   paymentsConfirmedTotal,
-  webhookFailuresTotal
+  webhookFailuresTotal,
+  chatMessagesTotal
 };

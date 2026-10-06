@@ -16,6 +16,7 @@
     "smoke:reviews": "node scripts/smokeReviews.js",
     "smoke:video": "node scripts/smokeVideo.js",
     "seed": "node scripts/seed.js",
+    "seed:video-demo": "node scripts/seed-video-demo.js",
     "lint": "eslint src/ tests/"
   },
   "dependencies": {

@@ -84,6 +84,8 @@ sudo apt update && sudo apt install -y caddy
 Create `/etc/caddy/Caddyfile`:
 ```caddy
 mentormatch.example.com {
+    header Permissions-Policy "camera=(self), microphone=(self)"
+
     # Route API and WebSocket requests to the backend container
     handle /api/* {
         reverse_proxy 127.0.0.1:5000
@@ -105,6 +107,9 @@ mentormatch.example.com {
     }
 }
 ```
+
+> **Note on horizontal scaling:** With more than one backend container, Socket.IO needs the Redis adapter.
+
 Reload Caddy:
 ```bash
 sudo systemctl reload caddy

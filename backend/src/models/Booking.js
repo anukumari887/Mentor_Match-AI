@@ -20,7 +20,8 @@ const bookingSchema = new mongoose.Schema({
   cancelledAt: Date,
   cancelledBy: { type: String, enum: ['learner', 'mentor'] },
   cancelReason: { type: String, maxlength: 500 },
-  hasReview: { type: Boolean, default: false }
+  hasReview: { type: Boolean, default: false },
+  externalMeetingUrl: { type: String, maxlength: 300 }
 }, { timestamps: true });
 
 bookingSchema.index(

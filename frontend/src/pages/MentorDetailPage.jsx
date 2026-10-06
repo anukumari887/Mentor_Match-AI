@@ -6,11 +6,14 @@ import {
   CheckCircle2,
   Clock3,
   Globe,
+  MessageSquare,
   Star,
   Briefcase
 } from 'lucide-react';
 import { createBooking, getMentor, listMentorSlots } from '../services/mentors';
 import { listMentorReviews } from '../services/reviews';
+import { useAuth } from '../contexts/AuthContext';
+import { createConversation, getChatAccess } from '../services/chat';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Avatar from '../components/Avatar';
@@ -20,9 +23,18 @@ function rupees(value) {
   return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
 }
 
+function useSafeAuth() {
+  try {
+    return useAuth();
+  } catch {
+    return { user: null };
+  }
+}
+
 export default function MentorDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useSafeAuth();
   const [mentor, setMentor] = useState(null);
   const [slots, setSlots] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -35,6 +47,8 @@ export default function MentorDetailPage() {
   const [bookingError, setBookingError] = useState('');
   const [bookingSaving, setBookingSaving] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [chatAccess, setChatAccess] = useState(null);
+  const [chatStarting, setChatStarting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -61,6 +75,32 @@ export default function MentorDetailPage() {
 
     return () => { active = false; };
   }, [id, retry]);
+
+  useEffect(() => {
+    let active = true;
+    if (user?.role === 'learner' && id) {
+      getChatAccess(id)
+        .then((data) => { if (active) setChatAccess(data); })
+        .catch(() => { if (active) setChatAccess(null); });
+    } else {
+      setChatAccess(null);
+    }
+    return () => { active = false; };
+  }, [id, user]);
+
+  const handleMessageMentor = async () => {
+    setChatStarting(true);
+    setBookingError('');
+    try {
+      const conv = await createConversation(id);
+      const convId = conv?._id || conv?.conversation?._id;
+      navigate(`/messages/${convId}`);
+    } catch (requestError) {
+      setBookingError(requestError.message || 'Could not start conversation with mentor.');
+    } finally {
+      setChatStarting(false);
+    }
+  };
 
   const selectSlot = async (slot) => {
     setBookingSaving(true);
@@ -143,6 +183,19 @@ export default function MentorDetailPage() {
                     <Globe size={12} /> {mentor.timezone || 'Asia/Kolkata'}
                   </span>
                 </div>
+
+                {chatAccess?.allowed && (
+                  <div className="mt-3.5">
+                    <button
+                      className="inline-flex items-center gap-1.5 rounded border border-accent/40 bg-accent/5 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/10 transition-colors shadow-sm"
+                      disabled={chatStarting}
+                      onClick={handleMessageMentor}
+                      type="button"
+                    >
+                      <MessageSquare size={13} /> {chatStarting ? 'Opening messages...' : 'Message mentor'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

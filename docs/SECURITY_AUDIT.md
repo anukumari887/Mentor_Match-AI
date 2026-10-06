@@ -29,7 +29,8 @@ This document tracks verified security controls, vulnerability mitigations, cryp
 | Security Control | Threat Mitigated | Implementation | Verification Status |
 | :--- | :--- | :--- | :--- |
 | **HTTP-Only, SameSite Cookies** | Cross-Site Scripting (XSS) token theft | Cookies set with `httpOnly: true`, `SameSite: "Lax"`, `path: "/"`, `secure: COOKIE_SECURE === "true"`. | Verified in HTTP headers audit |
-| **Strict Content-Security-Policy** | Cross-Site Scripting & data exfiltration | `img-src 'self' data:`, `default-src 'self'`, `object-src 'none'`. All images and brand assets strictly self-hosted. | Zero CSP violations in Lighthouse and Puppeteer audits |
+| **Strict Content-Security-Policy** | Cross-Site Scripting & data exfiltration | `default-src 'self'`, `img-src 'self' data:`, `media-src 'self' blob:`, `connect-src 'self' ws: wss:`, `object-src 'none'`. Loosened strictly to enable WebRTC video blob rendering and WebSocket signaling to self without opening third-party sources. | Verified in HTTP headers audit & browser audits |
+| **Permissions-Policy** | Unauthorized camera/mic usage / device blocking | Explicitly configured `camera=(self), microphone=(self)` across backend Helmet, Express middleware, frontend Nginx, and Caddy reverse proxy. Blocks third-party iframes/origins while enabling local user media. | Verified in `tests/headers.test.js` |
 | **Rate Limiting** | Brute force / credential stuffing / mail bombing | Redis/Memory rate limiting: `authLimiter` (10/15m IP), `changePasswordLimiter` (5/15m user), `forgotPasswordLimiter` (5/15m IP & 3/hr email), `resetPasswordLimiter` (10/15m IP). | Verified in `tests/password-lifecycle.test.js` |
 | **Safe Email Notification Service** | Email injection / SMTP failure cascading | Outgoing emails sanitize user inputs, rely strictly on configured `PUBLIC_APP_URL`, and SMTP errors are caught without failing client requests. | Verified via Mailpit integration tests |
 
@@ -52,3 +53,26 @@ This document tracks verified security controls, vulnerability mitigations, cryp
 - Rejects `PAYMENT_MODE=mock`.
 - Enforces `COOKIE_SECURE=true`.
 - Enforces `PUBLIC_APP_URL` matching a valid HTTPS domain (rejects localhost in production).
+
+---
+
+## 5. WebRTC Video Session & Learner-Mentor Chat Security
+
+| Security Control | Threat Mitigated | Implementation | Verification Status |
+| :--- | :--- | :--- | :--- |
+| **Permissions-Policy (`camera=(self), microphone=(self)`)** | Camera/mic blocking by default browser policy or cross-origin hijacking | Configured across backend Helmet, Express app, frontend Nginx, and Vite. Grants device access strictly to first-party origin while barring embedded iframes. | Verified in `tests/headers.test.js` & E2E Chromium tests |
+| **Strict CSP for WebRTC & WebSocket** | XSS and malicious media streaming | CSP allows `media-src 'self' blob:` and `connect-src 'self' ws: wss:`. No third-party domains permitted. Blob URLs strictly limited to local camera/microphone media streams. | Verified in `tests/headers.test.js` & browser security audit |
+| **Booking Participant Authorization** | Unauthorized video eavesdropping & TURN credential theft | `GET /api/bookings/:id/room` returns TURN credentials only to the booking's learner or mentor inside the join window (`startTime - 10m` to `endTime + 15m`). Strangers receive 403. | Verified in `tests/video-room.test.js` |
+| **Grace Period State Acceptance** | Session lock-out during 15-minute grace window | Room API and Socket.IO accept bookings in both `confirmed` and `completed` status to prevent auto-completion background jobs from locking active calls. | Verified in `tests/video-room.test.js` |
+| **Single-Seat Per User (Session Replacement)** | Seat exhaustion via multiple browser tabs | Socket.IO server tracks participants by authenticated `userId` (not socket ID). When the same user connects in a second tab or reloads, the previous socket receives `SESSION_REPLACED` and the seat is transferred. | Verified in `tests/video-room.test.js` & Playwright E2E |
+| **Room Boundary Isolation** | Cross-room WebRTC signal leakage | WebRTC signals (`offer`, `answer`, `candidate`, `media-state`) are relayed strictly inside `room:<bookingId>`. Max 2 participants strictly enforced. | Verified in `tests/video-room.test.js` |
+| **External Meeting Link Validation** | SSRF, Open Redirect, and XSS via meeting URLs | `PATCH /api/bookings/:id/meeting-link` allows only the assigned mentor to set a link. Strict Zod regex restricts host to `meet.google.com`, `zoom.us`, or `*.zoom.us` over `https:`. Max 300 characters. `javascript:` and `http:` URLs rejected. | Verified in `tests/video-room.test.js` |
+| **Dynamic Chat Access Verification (`getChatAccess`)** | Unpaid or illegitimate learner-mentor communication | Shared service verifies at least one `confirmed` or `completed` booking exists between learner and mentor. Valid until latest `endTime + CHAT_VALIDITY_DAYS`. Cancellation/refund instantly revokes send access. | Verified in `tests/chat-service.test.js` & `tests/chat-api.test.js` |
+| **Learner-Initiated Conversations** | Mentor spamming or unprompted contact | Only learners can initiate new conversation threads (`POST /api/chats`). Mentors can only reply in established threads. | Verified in `tests/chat-api.test.js` |
+| **IDOR Enumeration Prevention** | Guessing conversation IDs / thread metadata | Accessing a conversation not belonging to the authenticated user returns status 404 (`NOT_FOUND`), never 403, preventing valid ID enumeration. | Verified in `tests/chat-api.test.js` |
+| **Strict Message Sanitization & Plain Text Only** | Stored XSS & HTML injection | Message bodies trimmed, control characters removed (preserving newlines), limited to 1-2000 characters. Rendered in React as pure text with `white-space: pre-wrap`. No HTML parsing, no markdown links, no `dangerouslySetInnerHTML`. | Verified in `tests/chat-api.test.js` & `src/pages/MessagesPage.test.jsx` |
+| **Chat Rate Limiting** | Spamming & messaging DoS | Rate-limited to 20 messages/minute per user and 200 messages/day per conversation via Redis/Memory store. Returns HTTP 429 upon threshold breach. | Verified in `tests/chat-api.test.js` |
+| **Isolated Socket Rooms (`user:<userId>`)** | WebSocket message interception | Chat sockets automatically join only `user:<ownUserId>`. Clients cannot select or request arbitrary room names. Events carry only data the recipient is authorized to read. | Verified in `tests/chat-api.test.js` |
+| **Zero-Content Notification Emails** | Message leakage via email delivery / inbox snooping | New message emails notify the recipient with "You have a new message from <sender>" and link to `PUBLIC_APP_URL + "/messages/<conversationId>"`. Message text is never included. Throttled atomically to at most 1 email per 30 minutes. | Verified in `tests/chat-api.test.js` |
+| **Ephemeral Video/Audio Calls** | Privacy violation / unauthorized recording | No audio or video streams are recorded, buffered, or stored on any server. Direct browser-to-browser WebRTC peer connection. UI clearly declares: "This call is not recorded." | Verified across frontend and backend codebases |
+

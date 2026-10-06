@@ -12,7 +12,38 @@ const metricsRoutes = require('./routes/metrics');
 const app = express();
 
 // Security headers with Helmet
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'self'"],
+        fontSrc: ["'self'", 'https:', 'data:'],
+        formAction: ["'self'"],
+        frameAncestors: ["'self'"],
+        imgSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        scriptSrc: ["'self'"],
+        scriptSrcAttr: ["'none'"],
+        styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+        mediaSrc: ["'self'", 'blob:'],
+        connectSrc: [
+          "'self'",
+          env.CORS_ORIGIN || 'http://localhost:3000',
+          'ws:',
+          'wss:'
+        ],
+        upgradeInsecureRequests: env.NODE_ENV === 'production' ? [] : null
+      }
+    }
+  })
+);
+
+// Permissions-Policy header allowing camera and microphone for self only
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self)');
+  next();
+});
 
 // CORS configuration
 app.use(

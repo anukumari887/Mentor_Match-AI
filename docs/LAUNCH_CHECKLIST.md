@@ -78,7 +78,7 @@ The application functions fully in development using local containers, mock paym
 - [ ] **Legal Review of Public Policies:**
   - Review draft documents with legal counsel:
     - `frontend/src/pages/LegalPage.jsx` (`/terms`)
-    - `frontend/src/pages/LegalPage.jsx` (`/privacy`)
+    - `frontend/src/pages/LegalPage.jsx` (`/privacy` — **CRITICAL:** Review Section 4 "Messages" regarding stored learner-mentor chat history, access controls, complaint audit procedures, and regulatory disclosure under DPDPA 2023 before public launch)
     - `frontend/src/pages/LegalPage.jsx` (`/refund-policy`)
   - Ensure terms reflect Indian Contract Act, Information Technology Act (IT Act 2000), and Digital Personal Data Protection Act (DPDPA 2023).
 - [ ] **Business Entity & Tax (GST) Registration:**
