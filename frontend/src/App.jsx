@@ -8,6 +8,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
 import MentorBrowsePage from './pages/MentorBrowsePage';
+import MentorDetailPage from './pages/MentorDetailPage';
 import AdminMentorsPage from './pages/AdminMentorsPage';
 import AdminPage from './pages/AdminPage';
 import CheckoutPage from './pages/CheckoutPage';
