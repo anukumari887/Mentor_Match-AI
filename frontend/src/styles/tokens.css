@@ -35,6 +35,7 @@
   --focus-ring: #9c3820;
   --badge-bg: #f3f0ec;
   --badge-text: #181716;
+  --img-dim: brightness(1);
 }
 
 [data-theme="dark"] {
@@ -63,6 +64,7 @@
   --focus-ring: #e07a5f;
   --badge-bg: #2b2b30;
   --badge-text: #eeedf0;
+  --img-dim: brightness(0.85) contrast(0.96);
 }
 
 [data-theme="paper"] {
@@ -91,6 +93,7 @@
   --focus-ring: #854823;
   --badge-bg: #ece4d5;
   --badge-text: #2a221b;
+  --img-dim: brightness(0.98);
 }
 
 [data-theme="midnight"] {
@@ -119,6 +122,7 @@
   --focus-ring: #4ba3e3;
   --badge-bg: #1c2c46;
   --badge-text: #e3ebf7;
+  --img-dim: brightness(0.84) contrast(0.96);
 }
 
 [data-theme="forest"] {
@@ -147,6 +151,7 @@
   --focus-ring: #246b46;
   --badge-bg: #e5eee5;
   --badge-text: #162719;
+  --img-dim: brightness(0.98);
 }
 
 [data-theme="high-contrast"] {
@@ -175,6 +180,7 @@
   --focus-ring: #000000;
   --badge-bg: #f2f2f2;
   --badge-text: #000000;
+  --img-dim: brightness(1) contrast(1.05);
 }
 
 :root {
@@ -186,6 +192,37 @@
   --radius-lg: 10px;
 
   --transition-fast: 150ms ease-out;
+  --img-dim: brightness(1);
+}
+
+/* Image styles and glare control across dark themes */
+.theme-photo {
+  filter: var(--img-dim, brightness(1));
+  transition: filter var(--transition-fast);
+  background-color: var(--surface-raised);
+}
+
+/* Deterministic Initials Avatar Palettes (8 theme-aware combinations) */
+.avatar-palette-0 { background-color: var(--accent-subtle); color: var(--accent); border-color: currentColor; }
+.avatar-palette-1 { background-color: var(--success-subtle); color: var(--success); border-color: currentColor; }
+.avatar-palette-2 { background-color: var(--warning-subtle); color: var(--warning); border-color: currentColor; }
+.avatar-palette-3 { background-color: rgba(99, 102, 241, 0.16); color: #6366f1; border-color: rgba(99, 102, 241, 0.4); }
+.avatar-palette-4 { background-color: rgba(236, 72, 153, 0.16); color: #ec4899; border-color: rgba(236, 72, 153, 0.4); }
+.avatar-palette-5 { background-color: rgba(20, 184, 166, 0.16); color: #14b8a6; border-color: rgba(20, 184, 166, 0.4); }
+.avatar-palette-6 { background-color: rgba(168, 85, 247, 0.16); color: #a855f7; border-color: rgba(168, 85, 247, 0.4); }
+.avatar-palette-7 { background-color: rgba(249, 115, 22, 0.16); color: #f97316; border-color: rgba(249, 115, 22, 0.4); }
+
+[data-theme="high-contrast"] .avatar-palette-0,
+[data-theme="high-contrast"] .avatar-palette-1,
+[data-theme="high-contrast"] .avatar-palette-2,
+[data-theme="high-contrast"] .avatar-palette-3,
+[data-theme="high-contrast"] .avatar-palette-4,
+[data-theme="high-contrast"] .avatar-palette-5,
+[data-theme="high-contrast"] .avatar-palette-6,
+[data-theme="high-contrast"] .avatar-palette-7 {
+  background-color: var(--surface-raised) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

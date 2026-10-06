@@ -12,6 +12,13 @@ import {
 } from 'lucide-react';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import Avatar from '../components/Avatar';
+import ResponsiveImage from '../components/ResponsiveImage';
+import {
+  IllustrationSearchMatch,
+  IllustrationCalendarSlots,
+  IllustrationVideoConnect
+} from '../components/Illustrations';
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(null);
@@ -97,8 +104,27 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Sample Mentor Profile Preview (Honest Labeling) */}
-          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+          {/* Right Column: Hero Photo & Sample Interactive Preview */}
+          <div className="space-y-4 mx-auto w-full max-w-md lg:max-w-none">
+            {/* Hero photo with clean frame */}
+            <div className="relative overflow-hidden rounded-lg border border-border shadow-xs bg-surface-raised">
+              <ResponsiveImage
+                baseName="hero-learner"
+                alt="Practicing engineer in a focused one-on-one technical video mentoring session"
+                width={800}
+                height={480}
+                fetchPriority="high"
+                loading="eager"
+                rounded="rounded-none"
+                className="aspect-[16/10] object-cover"
+              />
+              <div className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1.5 rounded bg-surface/90 backdrop-blur-xs px-2.5 py-1 text-[11px] font-medium text-ink border border-border/60">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                <span>Live 1-on-1 session</span>
+              </div>
+            </div>
+
+            {/* Sample Mentor Profile Preview (Honest Labeling) */}
             <Card variant="raised" padding="md" className="relative">
               <div className="flex items-center justify-between pb-3 border-b border-border text-[11px] font-medium text-ink-muted">
                 <Badge variant="neutral" size="sm">
@@ -109,9 +135,7 @@ export default function LandingPage() {
 
               <div className="mt-4 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded bg-surface-raised border border-border font-serif font-bold text-base text-ink">
-                    AR
-                  </div>
+                  <Avatar name="Asha Rao" size="md" />
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-base font-bold text-ink">Asha Rao</h2>
@@ -208,34 +232,43 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-10 grid gap-8 md:grid-cols-3">
-            <div className="border-t-2 border-border pt-4">
-              <span className="font-serif text-xl font-bold text-accent">01</span>
-              <h3 className="mt-2 font-serif text-lg font-semibold text-ink">
-                Find the right practitioner
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
-                Filter mentors by tech stack, seniority, and hourly rate. Read their background, focus topics, and genuine session reviews.
-              </p>
+            <div className="rounded border border-border bg-surface p-5 flex flex-col justify-between">
+              <IllustrationSearchMatch className="w-full h-32 mb-4" />
+              <div className="border-t border-border pt-3">
+                <span className="font-serif text-lg font-bold text-accent">01</span>
+                <h3 className="mt-1 font-serif text-lg font-semibold text-ink">
+                  Find the right practitioner
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
+                  Filter mentors by tech stack, seniority, and hourly rate. Read their background, focus topics, and genuine session reviews.
+                </p>
+              </div>
             </div>
 
-            <div className="border-t-2 border-border pt-4">
-              <span className="font-serif text-xl font-bold text-accent">02</span>
-              <h3 className="mt-2 font-serif text-lg font-semibold text-ink">
-                Reserve your slot
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
-                Choose an available slot directly on the mentor's calendar. The system reserves it for 10 minutes while you complete checkout.
-              </p>
+            <div className="rounded border border-border bg-surface p-5 flex flex-col justify-between">
+              <IllustrationCalendarSlots className="w-full h-32 mb-4" />
+              <div className="border-t border-border pt-3">
+                <span className="font-serif text-lg font-bold text-accent">02</span>
+                <h3 className="mt-1 font-serif text-lg font-semibold text-ink">
+                  Reserve your slot
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
+                  Choose an available slot directly on the mentor's calendar. The system reserves it for 10 minutes while you complete checkout.
+                </p>
+              </div>
             </div>
 
-            <div className="border-t-2 border-border pt-4">
-              <span className="font-serif text-xl font-bold text-accent">03</span>
-              <h3 className="mt-2 font-serif text-lg font-semibold text-ink">
-                Meet in browser video
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
-                Join the private video room at session time. Zero external tools required. After completion, leave honest feedback.
-              </p>
+            <div className="rounded border border-border bg-surface p-5 flex flex-col justify-between">
+              <IllustrationVideoConnect className="w-full h-32 mb-4" />
+              <div className="border-t border-border pt-3">
+                <span className="font-serif text-lg font-bold text-accent">03</span>
+                <h3 className="mt-1 font-serif text-lg font-semibold text-ink">
+                  Meet in browser video
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
+                  Join the private video room at session time. Zero external tools required. After completion, leave honest feedback.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -282,6 +315,16 @@ export default function LandingPage() {
           {/* Mentor Perspective */}
           <div className="rounded border border-border p-6 sm:p-8 bg-surface-raised/30 flex flex-col justify-between">
             <div>
+              <div className="mb-5 overflow-hidden rounded border border-border shadow-2xs">
+                <ResponsiveImage
+                  baseName="mentor-practice"
+                  alt="Engineering workspace with notebook, pen, coffee, and code editor on screen"
+                  width={600}
+                  height={320}
+                  loading="lazy"
+                  className="aspect-[16/9] object-cover"
+                />
+              </div>
               <p className="text-xs font-semibold uppercase tracking-wider text-accent">For Mentors</p>
               <h3 className="mt-2 font-serif text-xl sm:text-2xl font-semibold text-ink">
                 Share what you know and earn on your schedule.

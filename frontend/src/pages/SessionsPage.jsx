@@ -15,6 +15,8 @@ import { submitReview } from '../services/reviews';
 import { submitComplaint } from '../services/admin';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import Avatar from '../components/Avatar';
+import { EmptyStateSessions } from '../components/Illustrations';
 
 const TABS = [
   { id: 'upcoming', label: 'Upcoming' },
@@ -186,7 +188,7 @@ export default function SessionsPage() {
 
       {!loading && !error && visibleBookings.length === 0 && (
         <Card variant="flat" padding="lg" className="text-center my-6">
-          <CalendarDays className="mx-auto text-ink-muted mb-2" size={30} />
+          <EmptyStateSessions />
           <h2 className="mt-2 font-serif text-xl sm:text-2xl font-semibold text-ink">No {activeTab} sessions</h2>
           <p className="mt-1.5 text-xs sm:text-sm text-ink-muted max-w-sm mx-auto">
             Your booked mentoring time and past session history will appear here.

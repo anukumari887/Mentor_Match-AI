@@ -486,3 +486,83 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
   - Captured 60 full-fidelity screenshots in `docs/screenshots/themes/` across all 5 key pages (`landing`, `browse_mentors`, `mentor_detail`, `checkout`, `admin`), all 6 themes (`light`, `dark`, `paper`, `midnight`, `forest`, `high-contrast`), and both `desktop` (1280x800) and `phone` (375x812) viewports.
   - Verified visual quality, contrast, responsiveness, and zero alignment issues.
 
+---
+
+## Frontend Images, Illustrations & Brand Assets
+
+- **Branch:** `frontend-images`
+- **Objective:** Add a small set of high-quality, self-hosted images, theme-aware inline SVG illustrations, deterministic initials avatars, and full brand assets to the frontend without modifying backend, database, Docker, or CI files, while strictly adhering to the existing Content-Security-Policy (`img-src 'self' data:`).
+
+### 1. High-Quality Self-Hosted Editorial Photos
+- **Asset Pipeline:** Generated and converted using `sharp` in `frontend/scripts/generateAssets.js`.
+- **Formatting & Sizing:** Clean WebP format with multi-resolution responsive sizing (`1200w`, `800w`, `400w`), explicit `width` and `height`, and soft theme-token placeholder backgrounds:
+  - `hero-learner`: 1200w (78.5 KB), 800w (46.7 KB), 400w (16.7 KB) - Hero section on landing page. Eager loading with `fetchpriority="high"`.
+  - `mentor-practice`: 1200w (99.3 KB), 800w (60.5 KB), 400w (21.5 KB) - "Earn by mentoring" section on landing page. Lazy loaded.
+  - `auth-workspace`: 1200w (117.7 KB), 800w (73.7 KB), 400w (25.0 KB) - Split desktop layout panel on login and register pages (`/login`, `/register`). Hidden on mobile (<900px) so the auth form comes first.
+- **Payload Discipline:** Every individual photo is <= 118 KB (well below the 150 KB limit). Landing page image transfer is ~107 KB (800w) to ~177 KB (1200w), well under the 600 KB total limit.
+- **Dark Theme Glare Protection:** Added `--img-dim` CSS token to all 6 themes in `frontend/src/styles/tokens.css` (reducing brightness to 0.85/0.84 in `dark` and `midnight` themes) and applied `.theme-photo` class.
+
+### 2. Theme-Adaptive Inline SVG Illustrations
+- **Zero Third-Party Image Dependency:** Created scalable, theme-reactive inline SVGs in `frontend/src/components/Illustrations.jsx` using `var(--color-...)` tokens and `currentColor`. Automatically adapts to all 6 themes with zero layout shifts.
+- **Landing Page "How It Works" Steps:**
+  - `IllustrationSearchMatch`: Smart mentor search and filtering.
+  - `IllustrationCalendarSlots`: Availability and slot booking.
+  - `IllustrationVideoConnect`: Interactive 1-on-1 video session.
+- **Empty & Error States:**
+  - `EmptyStateMentorSearch`: No mentors matching search criteria.
+  - `EmptyStateSessions`: No upcoming sessions scheduled.
+  - `EmptyStateProfileIncomplete`: Incomplete learner profile banner.
+  - `EmptyStateReviews`: No session reviews yet.
+  - `EmptyStateEarnings`: No mentor payouts/earnings yet.
+  - `EmptyStateComplaints`: No complaints or dispute cases.
+  - `EmptyState404`: 404 Page Not Found (stylized compass and paths).
+  - `EmptyStateNetworkError`: Backend unreachable / connection failure.
+
+### 3. Deterministic Initials Avatars (Honesty & Privacy)
+- **Component:** `frontend/src/components/Avatar.jsx`
+- **Rule Adherence:** No fake photos of strangers for mentors or learners.
+- **Implementation:** Deterministic DJB2 hash assigns consistent initials and palette color based on the person's name across 8 WCAG-accessible theme palette tokens (`avatar-palette-0` through `avatar-palette-7`).
+
+### 4. Brand & Social Share Assets
+- **Favicon Set:**
+  - `frontend/public/favicon.svg` (SVG brand mark, 306 bytes)
+  - `frontend/public/favicon.ico` (multi-size ICO, 611 bytes)
+  - `frontend/public/apple-touch-icon.png` (180x180, 3.8 KB)
+  - `frontend/public/icons/icon-192.png` and `icon-512.png`
+- **Web App Manifest:** `frontend/public/site.webmanifest`
+- **Social Sharing:** `frontend/public/og-image.png` (1200x630, 60.7 KB) with crisp typography and editorial branding.
+- **HTML Meta Tags:** Comprehensive `<meta>` tags in `frontend/index.html` (`og:title`, `og:description`, `og:image`, `twitter:card`, `theme-color`, `description`, and manifest link).
+  > **Domain Notice for Owner:** The social share image currently uses a relative path (`/og-image.png`). Once the production domain is configured, update `og:image` and `twitter:image` to the full URL (e.g. `https://yourdomain.com/og-image.png`).
+
+### 5. Verification & Test Output
+1. **Frontend Vitest Suites:**
+   - Command: `npm --prefix frontend test`
+   - Output:
+     ```
+     Test Files  17 passed (17)
+          Tests  36 passed (36)
+       Duration  13.96s
+     ```
+2. **Frontend Production Build:**
+   - Command: `npm --prefix frontend run build`
+   - Output:
+     ```
+     dist/index.html                                                3.22 kB │ gzip:   1.15 kB
+     dist/assets/index-D1VDdtFX.css                                48.53 kB │ gzip:   9.07 kB
+     dist/assets/index-DIGitzH7.js                                452.82 kB │ gzip: 123.82 kB
+     ✓ built in 15.27s
+     ```
+3. **CSP & Network Audit:**
+   - Puppeteer network interception: 0 external requests, 0 CSP violations, 0 404 image errors. Strict `img-src 'self' data:` enforced.
+4. **Automated Screenshot Suite:**
+   - Generated 72 screenshots in `docs/screenshots/images/` across all 6 themes at 360px and 1440px viewports covering landing, login, register, browse, empty states, and 404.
+5. **Real End-to-End User Journey (Mock Payment Mode):**
+   - Flow: Login -> Browse approved mentors (12 mentors) -> Check available slots -> Create booking -> Create mock payment order -> Confirm payment -> Verify session listing.
+   - Status: All backend endpoints and frontend interfaces verified operational.
+6. **Lighthouse Audit (Landing Page):**
+   - Accessibility: 94
+   - SEO: 92
+   - Cumulative Layout Shift: 0 (perfect)
+   - Unsized Images: 1.0 (pass, 100% compliant)
+
+

@@ -13,6 +13,8 @@ import { createBooking, getMentor, listMentorSlots } from '../services/mentors';
 import { listMentorReviews } from '../services/reviews';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import Avatar from '../components/Avatar';
+import { EmptyStateReviews } from '../components/Illustrations';
 
 function rupees(value) {
   return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
@@ -116,9 +118,7 @@ export default function MentorDetailPage() {
           {/* Header Card */}
           <Card variant="raised" padding="lg">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded bg-surface-raised border border-border font-serif font-bold text-xl text-ink">
-                {mentor.name.slice(0, 2).toUpperCase()}
-              </div>
+              <Avatar name={mentor.name} size="lg" />
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-ink">{mentor.name}</h1>
@@ -204,7 +204,10 @@ export default function MentorDetailPage() {
             {reviewsLoading && <p className="mt-3 text-xs text-ink-muted" role="status">Loading reviews...</p>}
             {reviewsError && <p className="mt-3 rounded border border-danger/40 bg-danger/10 p-2 text-xs text-danger" role="alert">{reviewsError}</p>}
             {!reviewsLoading && !reviewsError && reviews.length === 0 && (
-              <p className="mt-3 text-xs text-ink-muted">No reviews yet for this mentor.</p>
+              <div className="py-6 text-center">
+                <EmptyStateReviews className="w-24 h-20 mx-auto mb-2" />
+                <p className="text-xs text-ink-muted">No reviews yet for this mentor.</p>
+              </div>
             )}
 
             {!reviewsLoading && reviews.length > 0 && (

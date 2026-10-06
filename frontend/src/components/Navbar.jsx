@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ThemeMenu from './ThemeMenu';
+import Avatar from './Avatar';
 
 export default function Navbar() {
   const location = useLocation();
@@ -125,8 +126,9 @@ export default function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-1.5">
-              <span className="hidden xl:inline-flex items-center text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-surface-raised text-ink-muted border border-border">
-                {user.role}
+              <span className="hidden xl:inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2 py-0.5 rounded bg-surface-raised text-ink border border-border">
+                <Avatar name={user.name} size="xs" />
+                <span className="uppercase text-ink-muted text-[10px]">{user.role}</span>
               </span>
               {user.role !== 'admin' && (
                 <Link
@@ -207,9 +209,12 @@ export default function Navbar() {
           >
             {user && (
               <div className="mb-2 pb-3 border-b border-border flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-ink">{user.name}</p>
-                  <p className="text-[11px] text-ink-muted">{user.email}</p>
+                <div className="flex items-center gap-2.5">
+                  <Avatar name={user.name} size="sm" />
+                  <div>
+                    <p className="text-xs font-bold text-ink">{user.name}</p>
+                    <p className="text-[11px] text-ink-muted">{user.email}</p>
+                  </div>
                 </div>
                 <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-surface-raised text-ink-muted border border-border">
                   {user.role}

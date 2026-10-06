@@ -7,6 +7,12 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Skeleton from '../components/Skeleton';
+import Avatar from '../components/Avatar';
+import {
+  EmptyStateProfileIncomplete,
+  EmptyStateMentorSearch,
+  EmptyStateSessions
+} from '../components/Illustrations';
 
 function rupees(value) {
   return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
@@ -105,13 +111,16 @@ export default function DashboardPage() {
           padding="lg"
           className="mb-8 border-l-4 border-l-accent flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 bg-accent/5"
         >
-          <div>
-            <h2 className="font-serif text-lg sm:text-xl font-semibold text-ink">
-              Tell us what you want to learn
-            </h2>
-            <p className="mt-1 text-xs sm:text-sm leading-relaxed text-ink-muted max-w-xl">
-              Add your career goals, known skills, and target focus areas to unlock algorithmic matchmaking.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <EmptyStateProfileIncomplete className="w-20 h-16 shrink-0" />
+            <div>
+              <h2 className="font-serif text-lg sm:text-xl font-semibold text-ink">
+                Tell us what you want to learn
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm leading-relaxed text-ink-muted max-w-xl">
+                Add your career goals, known skills, and target focus areas to unlock algorithmic matchmaking.
+              </p>
+            </div>
           </div>
           <Link
             className="inline-flex items-center gap-1.5 rounded bg-accent px-4 py-2 text-xs font-semibold text-accent-text hover:bg-accent-hover transition-colors shrink-0"
@@ -146,9 +155,7 @@ export default function DashboardPage() {
                   <Card key={mentor.id} variant="default" padding="md" className="hover:border-accent transition-colors">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-surface-raised border border-border font-serif font-bold text-xs text-ink">
-                          {mentor.name.slice(0, 2).toUpperCase()}
-                        </div>
+                        <Avatar name={mentor.name} size="md" />
                         <div>
                           <h3 className="font-serif text-base font-semibold text-ink">{mentor.name}</h3>
                           <p className="text-xs text-ink-muted mt-0.5">{mentor.headline}</p>
@@ -195,7 +202,8 @@ export default function DashboardPage() {
             ) : (
               !recommendations?.reason && (
                 <Card variant="flat" padding="lg" className="text-center text-xs text-ink-muted">
-                  No approved mentors are available yet. Check back soon.
+                  <EmptyStateMentorSearch className="w-24 h-20 mx-auto mb-2" />
+                  <p>No approved mentors are available yet. Check back soon.</p>
                 </Card>
               )
             )}
@@ -230,7 +238,7 @@ export default function DashboardPage() {
               </Card>
             ) : (
               <Card variant="flat" padding="md" className="text-center">
-                <CalendarDays className="mx-auto text-ink-muted/60 mb-2" size={24} />
+                <EmptyStateSessions className="w-24 h-20 mx-auto mb-2" />
                 <p className="text-xs font-semibold text-ink">No upcoming sessions.</p>
                 <p className="mt-1 text-[11px] text-ink-muted">
                   Ready to talk through a technical hurdle or career decision?

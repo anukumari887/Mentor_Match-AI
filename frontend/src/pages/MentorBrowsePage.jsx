@@ -6,6 +6,8 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Skeleton from '../components/Skeleton';
+import Avatar from '../components/Avatar';
+import { EmptyStateMentorSearch } from '../components/Illustrations';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -210,8 +212,8 @@ export default function MentorBrowsePage() {
       {/* Empty State */}
       {!loading && !error && result?.items?.length === 0 && (
         <Card variant="flat" padding="lg" className="text-center my-6">
-          <UsersRound className="mx-auto text-ink-muted" size={32} />
-          <h2 className="mt-3 font-serif text-xl sm:text-2xl font-semibold text-ink">
+          <EmptyStateMentorSearch />
+          <h2 className="mt-2 font-serif text-xl sm:text-2xl font-semibold text-ink">
             No mentors match those filters
           </h2>
           <p className="mt-2 text-xs sm:text-sm text-ink-muted max-w-md mx-auto leading-relaxed">
@@ -241,9 +243,7 @@ export default function MentorBrowsePage() {
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-surface-raised border border-border font-serif font-bold text-xs text-ink">
-                        {mentor.name.slice(0, 2).toUpperCase()}
-                      </div>
+                      <Avatar name={mentor.name} size="md" />
                       <div>
                         <h2 className="font-serif text-lg font-semibold text-ink">{mentor.name}</h2>
                         <p className="text-xs text-ink-muted mt-0.5">{mentor.headline}</p>

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import { EmptyStateNetworkError } from '../components/Illustrations';
 
 export default function StatusPage() {
   const [health, setHealth] = useState(null);
@@ -96,9 +97,9 @@ export default function StatusPage() {
       )}
 
       {error && (
-        <div className="mt-8 flex items-start gap-3 rounded border border-danger/40 bg-danger/10 p-4 text-xs sm:text-sm text-danger">
-          <XCircle className="w-5 h-5 text-danger shrink-0 mt-0.5" />
-          <div>
+        <div className="mt-8 flex flex-col sm:flex-row items-center sm:items-start gap-4 rounded border border-danger/40 bg-danger/10 p-5 text-xs sm:text-sm text-danger">
+          <EmptyStateNetworkError className="w-24 h-20 shrink-0" />
+          <div className="text-center sm:text-left">
             <h3 className="font-semibold text-sm">System Unreachable</h3>
             <p className="mt-0.5">{error}</p>
           </div>

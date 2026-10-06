@@ -4,6 +4,7 @@ import { ArrowRight, LockKeyhole, UserCheck, GraduationCap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import ResponsiveImage from '../components/ResponsiveImage';
 
 export default function AuthPage({ mode }) {
   const isRegister = mode === 'register';
@@ -38,8 +39,9 @@ export default function AuthPage({ mode }) {
   };
 
   return (
-    <section className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6 bg-bg text-ink">
-      <Card variant="raised" padding="lg" className="w-full max-w-md">
+    <section className="flex flex-1 items-center justify-center px-4 py-8 sm:py-12 sm:px-6 bg-bg text-ink">
+      <div className="w-full max-w-4xl grid md:grid-cols-[1.1fr_0.9fr] lg:grid-cols-[1.15fr_0.85fr] gap-6 lg:gap-8 items-stretch">
+        <Card variant="raised" padding="lg" className="w-full flex flex-col justify-between">
         <div className="mb-6">
           <div className="mb-3.5 flex h-10 w-10 items-center justify-center rounded bg-surface-raised border border-border text-ink">
             <LockKeyhole size={18} aria-hidden="true" />
@@ -177,16 +179,48 @@ export default function AuthPage({ mode }) {
           </Button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-border text-center text-xs text-ink-muted">
-          {isRegister ? 'Already have an account?' : 'New to Mentor-Match?'}{' '}
-          <Link
-            className="font-semibold text-accent hover:underline"
-            to={isRegister ? '/login' : '/register'}
-          >
-            {isRegister ? 'Sign in' : 'Create an account'}
-          </Link>
-        </div>
-      </Card>
+          <div className="mt-6 pt-4 border-t border-border text-center text-xs text-ink-muted">
+            {isRegister ? 'Already have an account?' : 'New to Mentor-Match?'}{' '}
+            <Link
+              className="font-semibold text-accent hover:underline"
+              to={isRegister ? '/login' : '/register'}
+            >
+              {isRegister ? 'Sign in' : 'Create an account'}
+            </Link>
+          </div>
+        </Card>
+
+        {/* Editorial Photo Panel for Desktop (Hidden on mobile phones) */}
+        <aside className="hidden md:flex flex-col justify-between rounded-lg border border-border bg-surface-raised/40 p-6 overflow-hidden">
+          <div>
+            <div className="overflow-hidden rounded border border-border shadow-2xs mb-5">
+              <ResponsiveImage
+                baseName="auth-workspace"
+                alt="Editorial study workspace with open notebook, fountain pen, and coffee"
+                width={600}
+                height={400}
+                loading="lazy"
+                className="aspect-[4/3] object-cover"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold tracking-wider uppercase text-accent">Peer Mentorship</p>
+              <blockquote className="font-serif text-base lg:text-lg font-medium text-ink leading-snug">
+                "Focused 60-minute technical sessions with practicing engineers. Real answers to tough architecture, career, and coding challenges."
+              </blockquote>
+              <p className="text-xs text-ink-muted leading-relaxed">
+                Practitioner-reviewed profiles, in-browser WebRTC video, and transparent 24-hour cancellation refund protection.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-[11px] text-ink-muted">
+            <span className="font-semibold text-ink">Mentor-Match</span>
+            <span>Razorpay & WebRTC</span>
+          </div>
+        </aside>
+      </div>
     </section>
   );
 }

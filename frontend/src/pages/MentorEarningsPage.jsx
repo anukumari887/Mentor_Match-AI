@@ -9,6 +9,7 @@ import {
 import { getMentorEarnings } from '../services/payments';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import { EmptyStateEarnings } from '../components/Illustrations';
 
 function rupees(paise) {
   return `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format((paise || 0) / 100)}`;
@@ -106,9 +107,12 @@ export default function MentorEarningsPage() {
             </div>
 
             {!summary.recent?.length ? (
-              <p className="py-8 text-center text-xs text-ink-muted">
-                Completed, paid sessions will appear here.
-              </p>
+              <div className="py-8 text-center">
+                <EmptyStateEarnings className="w-24 h-20 mx-auto mb-2" />
+                <p className="text-xs text-ink-muted">
+                  Completed, paid sessions will appear here.
+                </p>
+              </div>
             ) : (
               <ul className="divide-y divide-border mt-1">
                 {summary.recent.map((payment) => (
