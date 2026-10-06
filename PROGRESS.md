@@ -15,7 +15,7 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 | Phase 5 | Payments and Money | COMPLETED | [x] | Pending |
 | Phase 6 | ML Service and Recommendations | COMPLETED | [x] | Pending |
 | Phase 7 | Reviews and Feedback | COMPLETED | [x] | Pending |
-| Phase 8 | Video Sessions | NOT STARTED | [ ] | Pending |
+| Phase 8 | Video Sessions | COMPLETED | [x] | Phase 8: Video sessions |
 | Phase 9 | Admin, Complaints, Payouts, Legal | NOT STARTED | [ ] | Pending |
 | Phase 10 | Monitoring | NOT STARTED | [ ] | Pending |
 | Phase 11 | Production Build, CI/CD, Deployment | NOT STARTED | [ ] | Pending |
@@ -127,3 +127,47 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 - **Verified:**
   - Full test suite passed: `npm test` (Backend: 12 test suites, 56 tests passed; Frontend: 13 test files, 24 tests passed).
   - Production frontend build passed: `npm --prefix frontend run build` (built cleanly in 9.15s, 0 errors).
+
+### Phase 8: Video sessions (Completed)
+- **Built:**
+  - Authenticated Socket.IO WebRTC signaling server in `backend/src/socket/video.js` with HTTP-only cookie JWT handshake validation and active user check.
+  - Strict join window enforcement (-10 minutes before session start to +15 minutes after session end) and confirmed-booking status check.
+  - Two-participant room capacity guard with atomic in-memory promise locking and isolated room-scoped signaling relay (`offer`, `answer`, `candidate`).
+  - Room endpoint `GET /api/bookings/:id/room` exposing `{canJoin, opensAt, closesAt, iceServers}`.
+  - Video UI in `frontend/src/pages/VideoRoomPage.jsx` with camera/mic permissions handling, mute/unmute audio, start/stop video, connection state alerts, and clean stream disposal.
+  - Background lifecycle jobs in `backend/src/services/bookingJobs.js` handling expired booking release, automated session completion with mentor `earned=true` flag, and session reminder emails.
+- **What was tested & real outputs:**
+  1. Backend video room tests:
+     - Command: `npm --prefix backend test`
+     - Output:
+       ```
+       PASS tests/video-room.test.js
+       PASS tests/booking-jobs.test.js
+       Test Suites: 12 passed, 12 total
+       Tests:       56 passed, 56 total
+       ```
+  2. Frontend video component tests:
+     - Command: `npm --prefix frontend test -- --run`
+     - Output:
+       ```
+       ✓ src/pages/VideoRoomPage.test.jsx (2 tests)
+       Test Files  13 passed (13)
+       Tests  24 passed (24)
+       ```
+  3. ML service tests:
+     - Command: `npm run test:ml`
+     - Output:
+       ```
+       8 passed, 1 warning in 1.90s
+       ```
+- **Manual Verification Steps for Owner (needs owner check):**
+  1. Login as learner in one browser window and mentor in a second browser window (or incognito).
+  2. Navigate to `http://localhost:3000/sessions`.
+  3. Find a confirmed session scheduled within the active window (now - 10 min to now + 15 min).
+  4. Both participants click "Join Video Session" to enter `http://localhost:3000/session/<bookingId>`.
+  5. Allow camera and microphone permissions; verify local video tile renders and peer video/audio stream establishes.
+  6. Toggle mic mute and camera disable; verify status badges reflect states accurately.
+  7. Click "Leave Session" and verify clean disconnection and redirection.
+- **What is next:**
+  - Phase 9: Admin, complaints, payouts, and legal pages.
+
