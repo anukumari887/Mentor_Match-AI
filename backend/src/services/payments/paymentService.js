@@ -7,6 +7,7 @@ const { getGateway } = require('./gateway');
 const { releaseSlotLock, slotLockKey } = require('../../controllers/booking.controller');
 const { sendBookingConfirmation } = require('../email');
 const logger = require('../../config/logger');
+const { paymentsConfirmedTotal } = require('../../utils/metrics');
 
 function calculatePaymentSplit(amount, feePercent = env.PLATFORM_FEE_PERCENT) {
   const platformFee = Math.round(amount * feePercent / 100);
@@ -176,7 +177,10 @@ async function confirmPayment({ gatewayOrderId, gatewayPaymentId }) {
 
   if (transitioned) {
     await releaseSlotLock(slotLockKey(booking.mentorId, booking.startTime), booking._id);
-    if (payment.status === 'paid') await sendConfirmationEmail(booking);
+    if (payment.status === 'paid') {
+      paymentsConfirmedTotal.inc();
+      await sendConfirmationEmail(booking);
+    }
   }
 
   return { payment, booking };

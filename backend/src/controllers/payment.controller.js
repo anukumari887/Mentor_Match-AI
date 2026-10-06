@@ -6,6 +6,7 @@ const WebhookEvent = require('../models/WebhookEvent');
 const { env } = require('../config/env');
 const logger = require('../config/logger');
 const { AppError } = require('../utils/errors');
+const { webhookFailuresTotal } = require('../utils/metrics');
 const { bookingPaymentSchema, razorpayVerificationSchema } = require('../validations/payment.validation');
 const { createPaymentOrder, confirmPayment } = require('../services/payments/paymentService');
 const { sendBookingCancellation } = require('../services/email');
@@ -84,14 +85,19 @@ async function razorpayWebhook(req, res, next) {
     const eventId = req.get('x-razorpay-event-id') || '';
     const expected = crypto.createHmac('sha256', env.RAZORPAY_WEBHOOK_SECRET).update(req.body).digest('hex');
     if (!safeSignatureMatch(expected, signature)) {
+      webhookFailuresTotal.inc();
       return next(new AppError('Webhook signature is invalid.', 400, 'INVALID_WEBHOOK_SIGNATURE'));
     }
-    if (!eventId) return next(new AppError('Webhook event id is required.', 400, 'MISSING_WEBHOOK_EVENT_ID'));
+    if (!eventId) {
+      webhookFailuresTotal.inc();
+      return next(new AppError('Webhook event id is required.', 400, 'MISSING_WEBHOOK_EVENT_ID'));
+    }
 
     let event;
     try {
       event = JSON.parse(req.body.toString('utf8'));
     } catch {
+      webhookFailuresTotal.inc();
       return next(new AppError('Webhook body is not valid JSON.', 400, 'INVALID_WEBHOOK_BODY'));
     }
 
@@ -99,6 +105,7 @@ async function razorpayWebhook(req, res, next) {
       await WebhookEvent.create({ eventId, type: event.event || 'unknown' });
     } catch (error) {
       if (error.code === 11000) return res.status(200).json({ received: true, duplicate: true });
+      webhookFailuresTotal.inc();
       throw error;
     }
 
@@ -114,6 +121,7 @@ async function razorpayWebhook(req, res, next) {
 
     return res.status(200).json({ received: true });
   } catch (error) {
+    webhookFailuresTotal.inc();
     logger.error({ message: error.message }, 'Razorpay webhook processing failed');
     return next(error);
   }

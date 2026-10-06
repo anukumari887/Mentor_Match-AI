@@ -1,0 +1,38 @@
+groups:
+  - name: mentor_match_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} target has been unreachable for more than 30 seconds."
+
+      - alert: BackendHigh5xxRate
+        expr: sum(rate(http_requests_total{code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend 5xx error rate is above 5%"
+          description: "High error rate detected on backend API responses: {{ $value | humanizePercentage }}."
+
+      - alert: MLServiceHighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="ml-service"}[5m])) by (le)) > 2
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ML Service p95 latency is over 2 seconds"
+          description: "Machine learning recommendation p95 duration has exceeded 2 seconds."
+
+      - alert: PaymentWebhookFailures
+        expr: rate(webhook_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Payment webhook failures detected"
+          description: "Incoming payment webhooks are failing signature verification or processing."

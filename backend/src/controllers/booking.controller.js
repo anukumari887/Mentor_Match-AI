@@ -7,6 +7,7 @@ const User = require('../models/User');
 const { env } = require('../config/env');
 const { getRedisClient, isRedisConnected } = require('../config/redis');
 const logger = require('../config/logger');
+const { bookingsCreatedTotal } = require('../utils/metrics');
 const { sendBookingCancellation } = require('../services/email');
 const { generateSlots } = require('../services/slots');
 const {
@@ -147,6 +148,7 @@ async function createBooking(req, res, next) {
       logger.warn({ message: error.message }, 'Could not record booking feedback event');
     }
 
+    bookingsCreatedTotal.inc();
     return res.status(201).json({ booking });
   } catch (error) {
     if (lockAcquired && lockKey) await releaseSlotLock(lockKey, bookingId);

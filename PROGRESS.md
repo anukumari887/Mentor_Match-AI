@@ -17,7 +17,7 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 | Phase 7 | Reviews and Feedback | COMPLETED | [x] | Pending |
 | Phase 8 | Video Sessions | COMPLETED | [x] | Phase 8: Video sessions |
 | Phase 9 | Admin, Complaints, Payouts, Legal | COMPLETED | [x] | Phase 9: Admin, complaints, payouts, legal |
-| Phase 10 | Monitoring | NOT STARTED | [ ] | Pending |
+| Phase 10 | Monitoring | COMPLETED | [x] | Phase 10: Monitoring |
 | Phase 11 | Production Build, CI/CD, Deployment | NOT STARTED | [ ] | Pending |
 | Phase 12 | Hardening and Final Verification | NOT STARTED | [ ] | Pending |
 
@@ -214,6 +214,58 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
        ✓ built in 12.56s
        ```
 - **What is next:**
-  - Phase 10: Monitoring with Prometheus and Grafana.
+  - Phase 10: Monitoring with Prometheus and Grafana (Completed).
+
+### Phase 10: Monitoring (Completed)
+- **Built:**
+  - Prometheus configuration in `monitoring/prometheus.yml` scraping both `backend:5000/metrics` and `ml-service:8000/metrics` with 5s evaluation frequency.
+  - Alert rules in `monitoring/alerts.yml` covering:
+    - `MLServiceHighLatency`: p95 latency exceeding 2 seconds over 5 minutes.
+    - `BackendHigh5xxRate`: 5xx error rate exceeding 5% over 5 minutes.
+    - `PaymentWebhookFailures`: failed webhook signatures or parse errors.
+    - `ServiceDown`: any monitored target being unreachable for > 30 seconds.
+  - Grafana automatic provisioning:
+    - Datasource provisioning in `monitoring/grafana/provisioning/datasources/prometheus.yml` pointing to `http://prometheus:9090`.
+    - Dashboard provisioning in `monitoring/grafana/provisioning/dashboards/dashboards.yml` loading `monitoring/grafana/provisioning/dashboards/mentor-match-overview.json`.
+    - Real-time Grafana dashboard tracking request rate, 5xx error rate %, p95 latency, ML service latency, bookings created, payments confirmed, and webhook failures.
+  - Integrated custom metrics in backend business logic:
+    - `bookingsCreatedTotal.inc()` in `booking.controller.js` on successful session booking.
+    - `paymentsConfirmedTotal.inc()` in `paymentService.js` on payment transition to `paid`.
+    - `webhookFailuresTotal.inc()` in `payment.controller.js` on signature mismatch or payload failure.
+  - Docker Compose service definition for `prometheus` (port 9090) and `grafana` (port 3001) under `profiles: ["monitoring"]` with persistent volumes `prometheus_data` and `grafana_data`.
+- **What was tested & real outputs:**
+  1. Docker Compose monitoring profile startup:
+     - Command: `docker compose --profile monitoring up -d`
+     - Output:
+       ```
+       Container mentormatch-prometheus Started
+       Container mentormatch-grafana Started
+       ```
+  2. Prometheus scrape targets health:
+     - Command: `curl.exe -s http://localhost:9090/api/v1/targets`
+     - Output:
+       ```json
+       {
+         "status": "success",
+         "data": {
+           "activeTargets": [
+             { "instance": "backend:5000", "job": "backend", "health": "up", "lastError": "" },
+             { "instance": "ml-service:8000", "job": "ml-service", "health": "up", "lastError": "" }
+           ]
+         }
+       }
+       ```
+  3. Prometheus alert rules:
+     - Command: `curl.exe -s http://localhost:9090/api/v1/rules`
+     - Output: All 4 rules (`ServiceDown`, `BackendHigh5xxRate`, `MLServiceHighLatency`, `PaymentWebhookFailures`) loaded with `health: "ok"`.
+  4. Grafana provisioned dashboard:
+     - Command: `curl.exe -s -u admin:admin http://localhost:3001/api/dashboards/uid/mentor-match-overview`
+     - Output: Dashboard `Mentor-Match AI: Platform Metrics` returned with HTTP 200, uid `mentor-match-overview`, and all 7 monitoring panels loaded.
+  5. Live traffic metric capture:
+     - Command: `curl.exe -s "http://localhost:9090/api/v1/query?query=http_requests_total"`
+     - Output: Live vector data returned for `backend:5000` routes (`/api/health`, `/metrics`).
+- **What is next:**
+  - Phase 11: Production build, CI/CD, and deployment files.
+
 
 
