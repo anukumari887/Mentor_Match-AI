@@ -16,7 +16,7 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 | Phase 6 | ML Service and Recommendations | COMPLETED | [x] | Pending |
 | Phase 7 | Reviews and Feedback | COMPLETED | [x] | Pending |
 | Phase 8 | Video Sessions | COMPLETED | [x] | Phase 8: Video sessions |
-| Phase 9 | Admin, Complaints, Payouts, Legal | NOT STARTED | [ ] | Pending |
+| Phase 9 | Admin, Complaints, Payouts, Legal | COMPLETED | [x] | Phase 9: Admin, complaints, payouts, legal |
 | Phase 10 | Monitoring | NOT STARTED | [ ] | Pending |
 | Phase 11 | Production Build, CI/CD, Deployment | NOT STARTED | [ ] | Pending |
 | Phase 12 | Hardening and Final Verification | NOT STARTED | [ ] | Pending |
@@ -169,5 +169,51 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
   6. Toggle mic mute and camera disable; verify status badges reflect states accurately.
   7. Click "Leave Session" and verify clean disconnection and redirection.
 - **What is next:**
-  - Phase 9: Admin, complaints, payouts, and legal pages.
+  - Phase 9: Admin, complaints, payouts, and legal pages (Completed).
+
+### Phase 9: Admin, complaints, payouts, legal pages (Completed)
+- **Built:**
+  - Admin APIs and Zod request validations (`backend/src/validations/admin.validation.js` & `backend/src/validations/complaint.validation.js`):
+    - `GET /api/admin/stats`: computes live counts (users, mentors by approval status, bookings by status), financial ledger (GMV, platform fee, owed to mentors, refunds due count and amount), and recommendation booking rate.
+    - `GET /api/admin/users` & `PATCH /api/admin/users/:id`: user search, role filter, and active/inactive toggle with protection preventing self-deactivation.
+    - `GET /api/admin/bookings`: full booking oversight with status filtering and populated participant profiles.
+    - `GET /api/admin/payments` & `PATCH /api/admin/payments/:id/mark-refunded`: payment history, refund-due tracking, and marking refund completion with required gateway/bank reference.
+    - `GET /api/admin/payouts-summary`, `POST /api/admin/payouts`, `GET /api/admin/payouts`: mentor balance calculation (`earned - paidOut`), recording manual payouts with reference validation and balance checks, and payouts audit log. Updated `getMentorEarnings` to subtract recorded payouts from available mentor balance.
+    - `POST /api/complaints`, `GET /api/admin/complaints`, `PATCH /api/admin/complaints/:id`: user reporting endpoint for sessions with admin moderation queue and resolution note recording.
+  - Frontend Admin Portal & UI Integration (`frontend/src/pages/AdminPage.jsx` & `frontend/src/services/admin.js`):
+    - Multi-tab admin interface accessible at `/admin`: Overview (financial KPIs, user/booking breakdowns), Mentor Reviews, Users, Bookings, Payments & Refunds (with refund completion modal), Payouts (with record payout modal and ledger), and Complaints (with resolution modal).
+    - Session issue reporting modal in `frontend/src/pages/SessionsPage.jsx` enabling participants to report session disputes.
+    - Legal compliance pages in `frontend/src/pages/LegalPage.jsx` covering Terms (`/terms`), Privacy (`/privacy`), and Refund Policy (`/refund-policy`) matching Section 6.5 cancellation and refund rules.
+    - Launch checklist documentation in `docs/LAUNCH_CHECKLIST.md` detailing all 5 Human Gates (Razorpay test/live setup, transactional SMTP, cloud infrastructure, legal review, and KYC).
+- **What was tested & real outputs:**
+  1. Backend test suite:
+     - Command: `npm --prefix backend test`
+     - Output:
+       ```
+       PASS tests/admin-flow.test.js
+       Test Suites: 13 passed, 13 total
+       Tests:       69 passed, 69 total
+       ```
+  2. Frontend test suite:
+     - Command: `npm --prefix frontend test -- --run`
+     - Output:
+       ```
+       ✓ src/pages/AdminPage.test.jsx (2 tests)
+       ✓ src/pages/AdminMentorsPage.test.jsx (2 tests)
+       Test Files  14 passed (14)
+       Tests  26 passed (26)
+       ```
+  3. Frontend production build:
+     - Command: `npm --prefix frontend run build`
+     - Output:
+       ```
+       ✓ 1698 modules transformed.
+       dist/index.html                   1.07 kB │ gzip:   0.60 kB
+       dist/assets/index-BF2sWP0Z.css   38.37 kB │ gzip:   7.61 kB
+       dist/assets/index-ttaQe8ZT.js   406.99 kB │ gzip: 116.10 kB
+       ✓ built in 12.56s
+       ```
+- **What is next:**
+  - Phase 10: Monitoring with Prometheus and Grafana.
+
 

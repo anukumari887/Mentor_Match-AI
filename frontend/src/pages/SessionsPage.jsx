@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  AlertCircle,
   Calendar,
   CalendarDays,
   CheckCircle2,
@@ -13,6 +14,7 @@ import {
 import { cancelBooking, listBookings } from '../services/mentors';
 import { useAuth } from '../contexts/AuthContext';
 import { submitReview } from '../services/reviews';
+import { submitComplaint } from '../services/admin';
 
 const TABS = [
   { id: 'upcoming', label: 'Upcoming' },
@@ -43,6 +45,10 @@ export default function SessionsPage() {
   const [reviewRating, setReviewRating] = useState('5');
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSuccessId, setReviewSuccessId] = useState('');
+  const [reportingId, setReportingId] = useState('');
+  const [complaintSubject, setComplaintSubject] = useState('');
+  const [complaintDescription, setComplaintDescription] = useState('');
+  const [complaintSuccessId, setComplaintSuccessId] = useState('');
   const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
@@ -89,6 +95,30 @@ export default function SessionsPage() {
       setReviewRating('5');
     } catch (requestError) {
       setError(requestError.message || 'Your review could not be submitted.');
+    } finally {
+      setBusyId('');
+    }
+  };
+
+  const submitSessionComplaint = async (booking) => {
+    if (!complaintSubject.trim() || !complaintDescription.trim()) {
+      setError('Please provide a subject and details for your report.');
+      return;
+    }
+    setBusyId(booking._id);
+    setError('');
+    try {
+      await submitComplaint({
+        bookingId: booking._id,
+        subject: complaintSubject.trim(),
+        description: complaintDescription.trim()
+      });
+      setComplaintSuccessId(booking._id);
+      setReportingId('');
+      setComplaintSubject('');
+      setComplaintDescription('');
+    } catch (requestError) {
+      setError(requestError.message || 'Your issue report could not be submitted.');
     } finally {
       setBusyId('');
     }
@@ -214,6 +244,13 @@ export default function SessionsPage() {
                         <Star size={13} className="text-amber-500" /> Leave a review
                       </button>
                     )}
+                    <button
+                      className="quiet-button text-xs py-2 px-3.5 hover:text-amber-700"
+                      onClick={() => { setReportingId(booking._id); setComplaintSuccessId(''); }}
+                      type="button"
+                    >
+                      <AlertCircle size={13} /> Report issue
+                    </button>
                     {canCancel && (
                       confirmCancelId === booking._id ? (
                         <div className="flex items-center gap-2">
@@ -250,6 +287,12 @@ export default function SessionsPage() {
                 {reviewSuccessId === booking._id && (
                   <p className="mt-4 rounded-md bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-200 p-2.5 text-xs font-semibold text-emerald-800 flex items-center gap-1.5" role="status">
                     <CheckCircle2 size={14} /> Review submitted. Thank you.
+                  </p>
+                )}
+
+                {complaintSuccessId === booking._id && (
+                  <p className="mt-4 rounded-md bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-200 p-2.5 text-xs font-semibold text-emerald-800 flex items-center gap-1.5" role="status">
+                    <CheckCircle2 size={14} /> Issue reported to administrator. Our moderation team will review it shortly.
                   </p>
                 )}
 
@@ -301,6 +344,58 @@ export default function SessionsPage() {
                         type="submit"
                       >
                         {busyId === booking._id ? 'Submitting...' : 'Submit review'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Inline Complaint Form */}
+                {reportingId === booking._id && (
+                  <form
+                    className="mt-5 rounded-lg border border-amber-200 bg-amber-50/20 dark:border-amber-900 dark:bg-amber-950/20 p-4 sm:p-5"
+                    onSubmit={(event) => { event.preventDefault(); submitSessionComplaint(booking); }}
+                  >
+                    <h3 className="text-sm font-bold text-slate-900 mb-1">Report an issue with this session</h3>
+                    <p className="text-xs text-slate-500 mb-3">Please provide clear details. An administrator will review your report.</p>
+                    <div className="space-y-3">
+                      <label className="form-label">
+                        Subject
+                        <input
+                          className="form-input mt-1 text-xs"
+                          maxLength={200}
+                          onChange={(event) => setComplaintSubject(event.target.value)}
+                          placeholder="e.g. Mentor arrived late, Video room connection failed"
+                          value={complaintSubject}
+                          required
+                        />
+                      </label>
+                      <label className="form-label">
+                        Description
+                        <textarea
+                          className="form-input mt-1 min-h-20 resize-y text-xs"
+                          maxLength={2000}
+                          onChange={(event) => setComplaintDescription(event.target.value)}
+                          placeholder="Describe the issue in detail..."
+                          value={complaintDescription}
+                          required
+                        />
+                      </label>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-end gap-2">
+                      <button
+                        className="quiet-button text-xs py-2 px-3.5"
+                        onClick={() => setReportingId('')}
+                        type="button"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="primary-button bg-amber-600 hover:bg-amber-700 text-xs py-2 px-4"
+                        disabled={busyId === booking._id}
+                        type="submit"
+                      >
+                        {busyId === booking._id ? 'Submitting...' : 'Submit report'}
                       </button>
                     </div>
                   </form>

@@ -56,8 +56,8 @@ export default function Navbar() {
           <nav aria-label="Main navigation" className="hidden lg:flex lg:items-center lg:gap-1">
             <Link className={`nav-link ${isActive('/') ? 'nav-link-active' : ''}`} to="/#how-it-works">How it works</Link>
             {user?.role === 'admin' && (
-              <Link className={`nav-link inline-flex items-center gap-1.5 ${isActive('/admin/mentors') ? 'nav-link-active' : ''}`} to="/admin/mentors">
-                <ClipboardCheck size={16} /> Review mentors
+              <Link className={`nav-link inline-flex items-center gap-1.5 ${isActive('/admin') || isActive('/admin/mentors') ? 'nav-link-active' : ''}`} to="/admin">
+                <ClipboardCheck size={16} /> Admin portal
               </Link>
             )}
             {user?.role === 'learner' && (
@@ -193,8 +193,8 @@ export default function Navbar() {
 
             <Link className={`nav-link ${isActive('/') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/#how-it-works">How it works</Link>
             {user?.role === 'admin' && (
-              <Link className={`nav-link inline-flex items-center gap-2 ${isActive('/admin/mentors') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/admin/mentors">
-                <ClipboardCheck size={16} /> Review mentors
+              <Link className={`nav-link inline-flex items-center gap-2 ${isActive('/admin') || isActive('/admin/mentors') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/admin">
+                <ClipboardCheck size={16} /> Admin portal
               </Link>
             )}
             {user?.role === 'learner' && (

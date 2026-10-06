@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
+const Payout = require('../models/Payout');
 const WebhookEvent = require('../models/WebhookEvent');
 const { env } = require('../config/env');
 const logger = require('../config/logger');
@@ -124,13 +125,19 @@ async function getMentorEarnings(req, res, next) {
       { $match: { mentorId: req.user._id, status: 'paid', earned: true } },
       { $group: { _id: '$mentorId', earned: { $sum: '$mentorEarning' } } }
     ]);
+    const [payoutSummary] = await Payout.aggregate([
+      { $match: { mentorId: req.user._id } },
+      { $group: { _id: '$mentorId', paidOut: { $sum: '$amount' } } }
+    ]);
     const recent = await Payment.find({ mentorId: req.user._id, status: 'paid' })
       .sort({ paidAt: -1 })
       .limit(20)
       .populate('bookingId', 'startTime priceAtBooking')
       .lean();
     const earned = summary?.earned || 0;
-    return res.status(200).json({ earned, paidOut: 0, balance: earned, recent });
+    const paidOut = payoutSummary?.paidOut || 0;
+    const balance = Math.max(0, earned - paidOut);
+    return res.status(200).json({ earned, paidOut, balance, recent });
   } catch (error) {
     return next(error);
   }

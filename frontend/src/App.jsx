@@ -8,8 +8,8 @@ import NotFoundPage from './pages/NotFoundPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
 import MentorBrowsePage from './pages/MentorBrowsePage';
-import MentorDetailPage from './pages/MentorDetailPage';
 import AdminMentorsPage from './pages/AdminMentorsPage';
+import AdminPage from './pages/AdminPage';
 import CheckoutPage from './pages/CheckoutPage';
 import SessionsPage from './pages/SessionsPage';
 import MentorEarningsPage from './pages/MentorEarningsPage';
@@ -33,6 +33,7 @@ export default function App() {
               <Route path="dashboard" element={<ProtectedRoute roles={['learner']}><DashboardPage /></ProtectedRoute>} />
               <Route path="mentors" element={<ProtectedRoute><MentorBrowsePage /></ProtectedRoute>} />
               <Route path="mentors/:id" element={<ProtectedRoute><MentorDetailPage /></ProtectedRoute>} />
+              <Route path="admin" element={<ProtectedRoute roles={['admin']}><AdminPage /></ProtectedRoute>} />
               <Route path="admin/mentors" element={<ProtectedRoute roles={['admin']}><AdminMentorsPage /></ProtectedRoute>} />
               <Route path="checkout/:bookingId" element={<ProtectedRoute roles={['learner']}><CheckoutPage /></ProtectedRoute>} />
               <Route path="sessions" element={<ProtectedRoute roles={['learner', 'mentor']}><SessionsPage /></ProtectedRoute>} />
