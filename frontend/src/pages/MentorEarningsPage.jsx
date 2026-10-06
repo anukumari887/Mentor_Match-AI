@@ -9,7 +9,7 @@ import {
 import { getMentorEarnings } from '../services/payments';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
-import { EmptyStateEarnings } from '../components/Illustrations';
+import { EmptyStateEarnings, IconHeaderEarnings } from '../components/Illustrations';
 
 function rupees(paise) {
   return `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format((paise || 0) / 100)}`;
@@ -38,7 +38,10 @@ export default function MentorEarningsPage() {
         <p className="text-xs font-semibold tracking-wider uppercase text-accent">
           Mentor finance
         </p>
-        <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink">Earnings</h1>
+        <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink flex items-center gap-2.5">
+          <IconHeaderEarnings className="w-6 h-6 text-accent shrink-0" />
+          <span>Earnings</span>
+        </h1>
         <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
           Net revenue from completed 1-to-1 mentoring sessions, minus the 15% platform fee.
         </p>

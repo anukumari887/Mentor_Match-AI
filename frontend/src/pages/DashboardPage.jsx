@@ -11,7 +11,10 @@ import Avatar from '../components/Avatar';
 import {
   EmptyStateProfileIncomplete,
   EmptyStateMentorSearch,
-  EmptyStateSessions
+  EmptyStateSessions,
+  EmptyStateRecommendations,
+  IconHeaderGuide,
+  IconHeaderRecommendations
 } from '../components/Illustrations';
 
 function rupees(value) {
@@ -114,8 +117,9 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <EmptyStateProfileIncomplete className="w-20 h-16 shrink-0" />
             <div>
-              <h2 className="font-serif text-lg sm:text-xl font-semibold text-ink">
-                Tell us what you want to learn
+              <h2 className="font-serif text-lg sm:text-xl font-semibold text-ink flex items-center gap-2">
+                <IconHeaderGuide className="w-5 h-5 text-accent shrink-0" />
+                <span>Tell us what you want to learn</span>
               </h2>
               <p className="mt-1 text-xs sm:text-sm leading-relaxed text-ink-muted max-w-xl">
                 Add your career goals, known skills, and target focus areas to unlock algorithmic matchmaking.
@@ -140,8 +144,9 @@ export default function DashboardPage() {
                 <p className="text-xs font-semibold tracking-wider uppercase text-accent">
                   Suggestions
                 </p>
-                <h2 className="mt-1 font-serif text-xl font-semibold text-ink">
-                  Mentors for your goals
+                <h2 className="mt-1 font-serif text-xl font-semibold text-ink flex items-center gap-2">
+                  <IconHeaderRecommendations className="w-5 h-5 text-accent shrink-0" />
+                  <span>Mentors for your goals</span>
                 </h2>
               </div>
               <Link className="text-xs font-semibold text-accent hover:underline" to="/mentors">
@@ -202,7 +207,7 @@ export default function DashboardPage() {
             ) : (
               !recommendations?.reason && (
                 <Card variant="flat" padding="lg" className="text-center text-xs text-ink-muted">
-                  <EmptyStateMentorSearch className="w-24 h-20 mx-auto mb-2" />
+                  <EmptyStateRecommendations className="w-24 h-20 mx-auto mb-2" />
                   <p>No approved mentors are available yet. Check back soon.</p>
                 </Card>
               )

@@ -48,8 +48,10 @@ The application functions fully in development using local containers, mock paym
   SMTP_USER=AKIAxxxxxxxxxxxx
   SMTP_PASS=your_smtp_password
   EMAIL_FROM="Mentor-Match AI <notifications@yourdomain.com>"
+  PUBLIC_APP_URL=https://yourdomain.com
   ```
 - [ ] **Send Verification Email:** Trigger a test registration or booking and verify recipient inbox delivery.
+- [ ] **Verify Password Reset Email Delivery:** Real transactional email delivery must be operational in production for the password reset workflow (`/forgot-password` -> `/reset-password`) and account security alert notifications ("Your password was changed") to reach end users. Password reset links are generated strictly against `PUBLIC_APP_URL`.
 
 ---
 
@@ -111,6 +113,7 @@ The application functions fully in development using local containers, mock paym
   - `ADMIN_PASSWORD` changed from demo default.
   - `COOKIE_SECURE=true`.
   - `CORS_ORIGIN=https://yourdomain.com`.
+  - `PUBLIC_APP_URL=https://yourdomain.com` (Must be canonical HTTPS URL; startup rejects localhost in production).
 - [ ] **Rate Limiting:**
   - Confirm Redis-backed rate limiting active for auth (10 req/15m) and payments (30 req/15m).
 - [ ] **Monitoring & Alerts:**

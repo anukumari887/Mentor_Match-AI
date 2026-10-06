@@ -1,5 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="14" fill="#9c4221"/>
-  <path d="M16 46V18h6.5l9.5 17.5L41.5 18H48v28h-5.5V26.5L33.8 42h-3.6L21.5 26.5V46H16z" fill="#fcfbfa"/>
-  <circle cx="32" cy="51" r="2.5" fill="#fcfbfa" opacity="0.8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    path { fill: #9c3820; }
+    @media (prefers-color-scheme: dark) {
+      path { fill: #e07a5f; }
+    }
+  </style>
+  <path d="M4 27V5H13L16 17L11 27H4Z" />
+  <path d="M28 27V5H19L16 17L21 27H28Z" />
 </svg>

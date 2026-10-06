@@ -280,6 +280,16 @@ export default function LandingPage() {
           {/* Learner Perspective */}
           <div className="rounded border border-border p-6 sm:p-8 bg-surface-raised/30 flex flex-col justify-between">
             <div>
+              <div className="mb-5 overflow-hidden rounded border border-border shadow-2xs">
+                <ResponsiveImage
+                  baseName="learner-study"
+                  alt="Focused learner taking notes while participating in a technical video mentorship session"
+                  width={600}
+                  height={320}
+                  loading="lazy"
+                  className="aspect-[16/9] object-cover"
+                />
+              </div>
               <p className="text-xs font-semibold uppercase tracking-wider text-accent">For Learners</p>
               <h3 className="mt-2 font-serif text-xl sm:text-2xl font-semibold text-ink">
                 Targeted guidance when you need it most.

@@ -41,7 +41,8 @@ const envSchema = z.object({
   TURN_CREDENTIAL: z.string().optional().default(''),
 
   METRICS_TOKEN: z.string().optional().default(''),
-  VITE_API_URL: z.string().optional().default('http://localhost:5000')
+  VITE_API_URL: z.string().optional().default('http://localhost:5000'),
+  PUBLIC_APP_URL: z.string().url().default('http://localhost:3000')
 });
 
 function validateEnv(rawEnv = process.env) {
@@ -69,6 +70,9 @@ function validateEnv(rawEnv = process.env) {
     }
     if (!env.COOKIE_SECURE) {
       throw new Error('Production safety check failed: COOKIE_SECURE must be true in production');
+    }
+    if (!env.PUBLIC_APP_URL || env.PUBLIC_APP_URL.includes('localhost') || !env.PUBLIC_APP_URL.startsWith('https://')) {
+      throw new Error('Production safety check failed: PUBLIC_APP_URL must be a valid https URL and cannot be localhost in production');
     }
   }
 

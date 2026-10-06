@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, LockKeyhole, UserCheck, GraduationCap } from 'lucide-react';
+import { ArrowRight, LockKeyhole } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import ResponsiveImage from '../components/ResponsiveImage';
+import Logo from '../components/Logo';
+import { IconChoiceLearner, IconChoiceMentor } from '../components/Illustrations';
 
 export default function AuthPage({ mode }) {
   const isRegister = mode === 'register';
@@ -43,8 +45,8 @@ export default function AuthPage({ mode }) {
       <div className="w-full max-w-4xl grid md:grid-cols-[1.1fr_0.9fr] lg:grid-cols-[1.15fr_0.85fr] gap-6 lg:gap-8 items-stretch">
         <Card variant="raised" padding="lg" className="w-full flex flex-col justify-between">
         <div className="mb-6">
-          <div className="mb-3.5 flex h-10 w-10 items-center justify-center rounded bg-surface-raised border border-border text-ink">
-            <LockKeyhole size={18} aria-hidden="true" />
+          <div className="mb-3">
+            <Logo variant="mark" asLink={false} />
           </div>
           <p className="text-xs font-semibold tracking-wider uppercase text-accent">Mentor-Match</p>
           <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink">
@@ -95,7 +97,7 @@ export default function AuthPage({ mode }) {
                       value="learner"
                       checked={form.role === 'learner'}
                     />
-                    <GraduationCap size={16} className="mx-auto mb-1 text-inherit" />
+                    <IconChoiceLearner className="mx-auto mb-1 text-inherit" />
                     <span className="text-xs">Learner</span>
                   </label>
 
@@ -114,7 +116,7 @@ export default function AuthPage({ mode }) {
                       value="mentor"
                       checked={form.role === 'mentor'}
                     />
-                    <UserCheck size={16} className="mx-auto mb-1 text-inherit" />
+                    <IconChoiceMentor className="mx-auto mb-1 text-inherit" />
                     <span className="text-xs">Mentor</span>
                   </label>
                 </div>
@@ -155,10 +157,19 @@ export default function AuthPage({ mode }) {
               type="password"
               value={form.password}
             />
-            {isRegister && (
+            {isRegister ? (
               <span className="mt-1 block text-[11px] text-ink-muted">
                 Minimum 8 characters.
               </span>
+            ) : (
+              <div className="mt-1.5 flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-accent hover:underline font-medium"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             )}
           </div>
 

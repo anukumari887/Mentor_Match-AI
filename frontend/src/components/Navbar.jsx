@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Settings,
   User,
   WalletCards,
   X
@@ -15,6 +16,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import ThemeMenu from './ThemeMenu';
 import Avatar from './Avatar';
+import Logo from './Logo';
 
 export default function Navbar() {
   const location = useLocation();
@@ -47,19 +49,7 @@ export default function Navbar() {
       <div className="page-wrap flex min-h-16 items-center justify-between gap-3 py-2">
         {/* Left: Brand + Desktop Links */}
         <div className="flex items-center gap-6">
-          <Link
-            aria-label="Mentor-Match home"
-            className="flex shrink-0 items-center gap-2.5 group"
-            onClick={closeMenu}
-            to="/"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded bg-ink text-surface text-sm font-bold font-serif shadow-sm">
-              M
-            </span>
-            <span className="font-serif text-base font-bold tracking-tight text-ink group-hover:text-accent transition-colors">
-              Mentor-Match
-            </span>
-          </Link>
+          <Logo onClick={closeMenu} />
 
           {/* Desktop Primary Nav Links */}
           <nav aria-label="Main navigation" className="hidden lg:flex lg:items-center lg:gap-1">
@@ -160,6 +150,14 @@ export default function Navbar() {
                   <WalletCards size={14} /> Earnings
                 </Link>
               )}
+              <Link
+                className={`whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded transition-colors ${
+                  isActive('/settings') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                }`}
+                to="/settings"
+              >
+                <Settings size={14} /> Settings
+              </Link>
               <button
                 className="whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded text-ink-muted hover:text-danger hover:bg-danger/10 transition-colors"
                 onClick={handleLogout}
@@ -315,6 +313,15 @@ export default function Navbar() {
                     <WalletCards size={14} /> Earnings
                   </Link>
                 )}
+                <Link
+                  className={`whitespace-nowrap inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded ${
+                    isActive('/settings') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                  }`}
+                  onClick={closeMenu}
+                  to="/settings"
+                >
+                  <Settings size={14} /> Settings
+                </Link>
                 <button
                   className="whitespace-nowrap inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded text-left text-danger hover:bg-danger/10 transition-colors"
                   onClick={handleLogout}

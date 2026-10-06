@@ -24,7 +24,11 @@ function parseExpiryToMs(expiryStr) {
 }
 
 function generateToken(payload) {
-  return jwt.sign(payload, env.JWT_SECRET, {
+  const tokenPayload = {
+    ...payload,
+    tv: payload.tv !== undefined ? payload.tv : 0
+  };
+  return jwt.sign(tokenPayload, env.JWT_SECRET, {
     expiresIn: env.JWT_EXPIRES_IN
   });
 }

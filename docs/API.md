@@ -74,8 +74,53 @@ Clears session cookie.
 - **Auth:** Optional
 - **Response `200 OK`**: `{ "message": "Logged out successfully" }`
 
+### `POST /api/auth/change-password`
+Change current user's password for learner, mentor, or admin. Verifies `currentPassword`, ensures `newPassword` meets length (>=8, <=72 bytes), complexity, and common password blacklist rules, bumps `tokenVersion`, invalidates all concurrent sessions, issues a refreshed cookie for the current session, and sends an email notification.
+- **Auth:** Required (any authenticated user)
+- **Rate Limit:** 5 requests per 15 minutes per user
+- **Body:**
+  ```json
+  {
+    "currentPassword": "OldPassword123!",
+    "newPassword": "NewSecurePassword456!"
+  }
+  ```
+- **Response `200 OK`**: `{ "message": "Password changed successfully" }`
+- **Error Codes:** `INVALID_CURRENT_PASSWORD` (400), `SAME_PASSWORD` (400), `VALIDATION_ERROR` (400)
+
+### `POST /api/auth/logout-all`
+Revokes all active sessions across all devices for the authenticated user by incrementing `tokenVersion` and clearing the local auth cookie.
+- **Auth:** Required
+- **Response `200 OK`**: `{ "message": "Logged out of all sessions successfully" }`
+
+### `POST /api/auth/forgot-password`
+Request a password reset link. Always responds with the same constant generic message to prevent email enumeration. Generates a cryptographically random token, stores its SHA-256 hash in `passwordResets` with a 30-minute TTL, and sends a reset link to the email.
+- **Auth:** None
+- **Rate Limit:** 5 requests per 15 minutes per IP; 3 requests per hour per email address
+- **Body:**
+  ```json
+  {
+    "email": "user@example.com"
+  }
+  ```
+- **Response `200 OK`**: `{ "message": "If an account exists for that email, we have sent a reset link" }`
+
+### `POST /api/auth/reset-password`
+Reset password using a single-use token received via email. Validates SHA-256 token hash against active unexpired records, checks password rules, updates password hash, marks token as used, increments `tokenVersion`, and dispatches a password change confirmation email.
+- **Auth:** None
+- **Rate Limit:** 10 requests per 15 minutes per IP
+- **Body:**
+  ```json
+  {
+    "token": "64_character_hex_token",
+    "newPassword": "NewSecurePassword456!"
+  }
+  ```
+- **Response `200 OK`**: `{ "message": "Password reset successfully. You may now log in with your new password." }`
+- **Error Codes:** `INVALID_OR_EXPIRED_TOKEN` (400), `VALIDATION_ERROR` (400)
+
 ### `GET /api/auth/me`
-Retrieve currently logged-in user and profile metadata.
+Retrieve currently logged-in user and profile metadata (including `profileCompleteness` for mentors).
 - **Auth:** Required
 - **Response `200 OK`**: Returns user record and associated learner/mentor profile.
 

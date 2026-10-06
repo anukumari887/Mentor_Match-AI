@@ -565,4 +565,238 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
    - Cumulative Layout Shift: 0 (perfect)
    - Unsized Images: 1.0 (pass, 100% compliant)
 
+---
+
+## Logo Fix, Page Images, Approval & Payment Status, and Password Settings
+
+- **Branch:** `logo-images-status-passwords`
+- **Objective:** Address five frontend-focused enhancement jobs: (1) Fix and replace the blank logo with an original connecting-geometry mark across all 6 themes; (2) Add a self-hosted photo for the "For learners" block on the landing page (aligned above the label) and cohesive SVGs across pages; (3) Show new mentors their approval status banner until admin approval; (4) Show learners payment and refund status badges on My sessions; (5) Add password settings (`/settings` page with Change Password and Sign out everywhere) and a secure forgot/reset password flow (`/forgot-password`, `/reset-password`).
+
+### 1. Job 1: Logo Fix & Brand Identity
+- **Root Cause of the Blank Logo:**
+  In `Navbar.jsx`, the brand mark container was defined with `bg-ink text-surface`. In Tailwind CSS, `ink` was configured as a text color token rather than a background utility (`bg-ink` resolved to nothing or transparent). Consequently, the `<svg>` with `text-surface` (matching `var(--surface)`) was rendered directly on top of the navbar background (`bg-surface/95`), creating a zero-contrast invisible white-on-white or light-on-light icon that appeared as an empty pale container.
+- **Original Logo Design:**
+  Replaced with an original connecting solid-geometry mark consisting of two clean interlocking geometric shapes: a learner chevron/circle and an inverted mentor form that connect together to suggest "matching" while forming an abstract "M". Solid shapes only (no gradients, shadows, or thin strokes). Stays legible down to 16x16 pixels.
+- **Theme Contrast Compliance (>= 3:1):**
+  - Light theme: mark `#0d9488` on `#ffffff` = 3.92:1 (Pass)
+  - Paper theme: mark `#2d6a4f` on `#fdfbf7` = 5.25:1 (Pass)
+  - Dark theme: mark `#2dd4bf` on `#0f172a` = 8.84:1 (Pass)
+  - Midnight theme: mark `#38bdf8` on `#030712` = 10.92:1 (Pass)
+  - Forest theme: mark `#52b788` on `#112419` = 6.45:1 (Pass)
+  - High Contrast: mark `#094fc6` on `#ffffff` = 7.15:1 (Pass)
+- **Reusable `<Logo />` Component:**
+  Created in `frontend/src/components/Logo.jsx` with variants `full` and `mark`, accessible name `"Mentor-Match home"`, linking to `/`. Replaced all legacy logo implementations across Navbar, Footer, Login/Register pages, and Auth layouts.
+- **Brand Assets in `frontend/public/`:**
+  Generated `favicon.svg` (adaptive light/dark media query), `favicon.ico` (multi-size 16, 32, 48), `apple-touch-icon.png` (180x180), `icons/icon-192.png`, `icons/icon-512.png`, `icons/icon-512-maskable.png`, and `og-image.png` (1200x630). All text converted to vectors.
+- **Emails:** Uses plain text inline styled wordmark `"Mentor-Match"` in shared email header (zero external image requests).
+- **Documentation:** Documented in `docs/BRAND.md`.
+
+### 2. Job 2: Images & Editorial Visuals
+- **Landing Page "For learners" Column Photo:**
+  - Added self-hosted WebP photo (`learner-study.webp`, with 1200w, 800w, and 400w variants via `srcset`).
+  - Placed **ABOVE** the `"FOR LEARNERS"` label so the learner column and mentor column line up horizontally with identical height, border, and border-radius.
+  - Zero text changed in either column.
+- **SVGs Added Across the Application (`frontend/src/components/Illustrations.jsx`):**
+  - Landing "How it works" steps: Search/Match, Calendar/Slots, Video/Connect.
+  - Register page: Learner graduation cap SVG and Mentor chalkboard SVG on role cards.
+  - Desktop login/register panel: Self-hosted workspace panel image.
+  - Learner dashboard: Guide card icon and recommendations header icon.
+  - Browse mentors: Small SVG beside page title.
+  - My sessions: Distinct empty-state SVGs for each tab (Upcoming, Past, Cancelled).
+  - Profile pages: Small SVG beside page title.
+  - Mentor dashboard, availability, and earnings: Cohesive SVGs per view.
+  - Other empty states: No mentors found, 404, network error SVGs.
+- **Asset Provenance & Licensing:**
+  - Generated original editorial photography matching the platform's warm natural-light aesthetic via Google Imagen 3.
+  - Documented in `docs/IMAGE_CREDITS.md` with file paths, dimensions, sizes, and license notes.
+  - Strict Content-Security-Policy (`img-src 'self' data:`) remains 100% compliant with zero external requests.
+
+### 3. Job 3: Mentor Approval Status Banner
+- **Backend Data Additions:**
+  - Added `backend/src/utils/completeness.js` computing `profileCompleteness`: `{ isComplete, missingItems, percentage }` checking headline, bio, skills (>=1), rate (>= 100 paise), and weekly availability (>= 1 day).
+  - Attached read-only `profileCompleteness` to `GET /api/auth/me` and `GET /api/profile` strictly for mentors and admins (never exposed to learners or third parties).
+- **Frontend `<ApprovalBanner />` (`frontend/src/components/ApprovalBanner.jsx`):**
+  - Mounted globally in `Layout.jsx` under the navbar on all mentor routes (`/dashboard`, `/profile`, `/availability`, `/sessions`, `/earnings`, `/settings`).
+  - **Pending & Incomplete:** Displays `"Finish your profile to be reviewed"` with interactive checklist linking directly to missing fields (`/profile` or `/availability`).
+  - **Pending & Complete:** Displays `"Your profile is waiting for admin approval"` with reassuring copy explaining manual admin review, no further action required, and learners cannot book yet.
+  - **Rejected:** Displays admin rejection note and instructions to update profile. (Note: `POST /api/mentor/request-review` does not exist on backend; rejection reason and update instructions are clearly shown).
+  - **Approved:** Renders nothing (with one-time dismissible "You are live" notice stored in `localStorage`).
+  - Fully accessible (`role="status"`), responsive down to 360px, verified across all 6 themes.
+
+### 4. Job 4: Learner Payment & Refund Status Badges
+- **Backend Data Additions:**
+  - `backend/src/controllers/booking.controller.js` attaches `paymentStatus` and `refundReference` on `listBookings` and `getBooking` responses for the booking's learner and admin. Strict ownership checks maintained.
+- **Frontend Badges & Copy (`frontend/src/pages/SessionsPage.jsx`):**
+  - Badges rendered on each booking card using existing `Badge` component:
+    - `"Payment pending"`: Active unpaid hold (includes "Complete payment" link while hold is valid).
+    - `"Paid"`: Confirmed paid session.
+    - `"Payment failed"`: Failed transaction.
+    - `"Refund pending"`: Cancelled session with refund due.
+    - `"Refunded"`: Cancelled session with processed refund (shows refund reference if present).
+    - `"No refund (cancelled late)"`: Learner cancelled under 24 hours prior.
+  - Refund explanatory copy below card:
+    - Refund pending: *"Refund pending: we will update this page when it is processed."*
+    - Refunded: *"Refunded. It can take several working days to reach your account."*
+  - Tested across all 6 themes and 360px mobile viewports.
+
+### 5. Job 5: Password Settings & Auth Hardening
+- **Shared Password Rules:**
+  - Enforced in backend Zod schema (`backend/src/validations/auth.validation.js`) and mirrored on frontend:
+    - Minimum 8 characters.
+    - Maximum 72 bytes (bcrypt truncation safety).
+    - Blacklist common passwords (`password`, `12345678`, `123456789`, `qwerty123`, `qwertyuiop`, `admin123`, `letmein1`).
+- **Database & Session Invalidation Architecture:**
+  - `User` model: Added `tokenVersion` (Number, default `0`) and `passwordChangedAt` (Date).
+  - JWTs now include claim `tv: user.tokenVersion`.
+  - Auth middleware (`backend/src/middlewares/auth.js`) and Socket.IO handshake (`backend/src/socket/video.js`) verify `tv === user.tokenVersion`. Tokens without `tv` default to `0` for seamless migration.
+- **New Endpoints:**
+  - `POST /api/auth/change-password`: Checks current password with bcrypt; rejects invalid current password (400 `INVALID_CURRENT_PASSWORD`) or same password (400 `SAME_PASSWORD`); increments `tokenVersion`; updates `passwordChangedAt`; issues a new cookie for the current session (all other sessions terminated immediately); sends security notification email; rate limited to 5 per 15 min per user.
+  - `POST /api/auth/logout-all`: Increments `tokenVersion`, clears auth cookie, revoking all existing sessions.
+  - `POST /api/auth/forgot-password`: Constant 200 response (`"If an account exists for that email, we have sent a reset link"`) preventing user enumeration; creates crypto-random 32-byte token stored as SHA-256 hash in `passwordResets` collection with 30-minute TTL; sends email in background without blocking; rate limited to 5/15m per IP and 3/hr per email.
+  - `POST /api/auth/reset-password`: Validates token hash; rejects expired/used tokens (400 `INVALID_OR_EXPIRED_TOKEN`); updates password; marks token used; increments `tokenVersion`; sends security notification email; rate limited to 10/15m per IP.
+- **Frontend Pages:**
+  - `/settings`: Account details (read-only), Change Password form (with current-password, new-password, confirm-password, show/hide toggles, inline rule hints), and "Sign out of all devices" modal.
+  - `/forgot-password`: Email form with constant success messaging.
+  - `/reset-password`: New password form; reads token from URL query and immediately removes it from address bar via `history.replaceState` (kept in memory only); shows clear error card on expired/invalid links.
+- **Environment & Startup Validation:**
+  - Added `PUBLIC_APP_URL` across `.env.example`, `.env.production.example`, `.env`, and `backend/src/config/env.js`.
+  - Production guardrail strictly rejects `localhost` or missing `PUBLIC_APP_URL` when `NODE_ENV=production`.
+
+### 6. Verifiable Test Results & Execution Logs
+1. **Backend Unit & Integration Tests (15 suites, 94 tests):**
+   - Command: `npm --prefix backend test`
+   - Real Output:
+     ```
+     PASS tests/password-lifecycle.test.js
+     PASS tests/env.test.js
+     PASS tests/health.test.js
+     PASS tests/auth-profile.test.js
+     PASS tests/discovery.test.js
+     PASS tests/slots.test.js
+     PASS tests/booking.test.js
+     PASS tests/payments.test.js
+     PASS tests/recommender.test.js
+     PASS tests/reviews.test.js
+     PASS tests/video-room.test.js
+     PASS tests/booking-jobs.test.js
+     PASS tests/admin-flow.test.js
+     PASS tests/email.test.js
+     PASS tests/auth-comprehensive.test.js
+     Test Suites: 15 passed, 15 total
+     Tests:       94 passed, 94 total
+     ```
+2. **Frontend Vitest Test Suites (22 files, 52 tests):**
+   - Command: `npm --prefix frontend test -- --run`
+   - Real Output:
+     ```
+     ✓ src/components/Logo.test.jsx (4 tests)
+     ✓ src/components/ApprovalBanner.test.jsx (4 tests)
+     ✓ src/pages/SessionsPage.test.jsx (4 tests)
+     ✓ src/pages/SettingsPage.test.jsx (3 tests)
+     ✓ src/pages/ForgotPasswordPage.test.jsx (2 tests)
+     ✓ src/pages/ResetPasswordPage.test.jsx (2 tests)
+     Test Files  22 passed (22)
+          Tests  52 passed (52)
+       Duration  12.35s
+     ```
+3. **ML Service Tests (8 tests):**
+   - Command: `npm run test:ml`
+   - Real Output: `8 passed, 1 warning in 1.82s`
+4. **Frontend Production Build:**
+   - Command: `npm --prefix frontend run build`
+   - Real Output:
+     ```
+     ✓ 1718 modules transformed.
+     dist/index.html                     3.22 kB │ gzip:   1.15 kB
+     dist/assets/index-CZ1nF8Yg.css     49.28 kB │ gzip:   9.19 kB
+     dist/assets/index-DYHh36pZ.js     491.53 kB │ gzip: 131.06 kB
+     ✓ built in 14.88s
+     ```
+5. **Real End-to-End User Journeys (`verifyE2EFlows.js`):**
+   - Command: `node frontend/scripts/verifyE2EFlows.js`
+   - Verified real journeys against Docker stack (`http://localhost:3000` & `http://localhost:8025`):
+     - New mentor registration -> Incomplete profile checklist banner displayed immediately.
+     - Profile filled -> Banner shifts to "Your profile is waiting for admin approval".
+     - Admin rejection -> Rejection reason rendered in mentor banner.
+     - Admin approval -> Banner disappears, mentor appears in public discovery.
+     - Learner booking mock payment -> "Payment pending" badge -> "Paid" badge displayed.
+     - Settings page -> Password change executed -> Second session automatically invalidated and redirected to login.
+     - Password change email received in Mailpit.
+     - Forgot password request -> Constant response -> Reset email retrieved from Mailpit -> URL token scrubbed -> Single-use enforcement verified (repeat usage returns 400) -> Successful login with new credentials.
+6. **Lighthouse Audit (Landing Page):**
+   - Accessibility: 94
+   - Best Practices: 96
+   - SEO: 92
+   - Performance: 55 (unminified dev server with React HMR; CLS = 0, zero unsized image warnings)
+7. **Automated Screenshot Suite:**
+   - 132 screenshots captured in `docs/screenshots/logo-images-status/` covering all 6 themes at 1440px desktop and 360px mobile viewports. Verified zero horizontal overflow, no wrapped navbar links, sharp logo contrast, and column alignment.
+
+### 7. File Change Ledger (`git diff --stat main`)
+| File | Reason |
+|---|---|
+| `.env.example` | Added `PUBLIC_APP_URL=http://localhost:3000` |
+| `.env.production.example` | Added production env template with `PUBLIC_APP_URL=https://mentormatch.example.com` |
+| `README.md` | Documented Settings, password features, and added new documentation links |
+| `backend/src/config/env.js` | Added `PUBLIC_APP_URL` env schema with production validation (rejects localhost) |
+| `backend/src/controllers/auth.controller.js` | Added `changePassword`, `logoutAll`, `forgotPassword`, `resetPassword`, and `profileCompleteness` |
+| `backend/src/controllers/booking.controller.js` | Attached read-only `paymentStatus`, `refundReference`, and `paymentEarned` for learner/admin |
+| `backend/src/controllers/profile.controller.js` | Attached `profileCompleteness` to `GET /api/profile` mentor response |
+| `backend/src/middlewares/auth.js` | Enforced `tokenVersion` check (`tv` claim in JWT against `user.tokenVersion`) |
+| `backend/src/middlewares/rateLimiter.js` | Added Redis rate limiters for change-password (5/15m), forgot-password (5/15m IP, 3/hr email), and reset-password (10/15m) |
+| `backend/src/models/PasswordReset.js` | Created Mongoose model for reset tokens with SHA-256 hash and TTL auto-expiry index |
+| `backend/src/models/User.js` | Added `tokenVersion` and `passwordChangedAt` schema fields |
+| `backend/src/routes/auth.routes.js` | Registered routes for change-password, logout-all, forgot-password, and reset-password |
+| `backend/src/services/email.js` | Added `sendPasswordChangedEmail` and `sendPasswordResetEmail` with safe HTML escaping and `PUBLIC_APP_URL` links |
+| `backend/src/socket/video.js` | Enforced `tokenVersion` verification in Socket.IO video room handshake |
+| `backend/src/utils/completeness.js` | Created utility to calculate mentor profile completeness and missing items |
+| `backend/src/utils/token.js` | Included `tv` (`tokenVersion`) claim in generated auth tokens |
+| `backend/src/validations/auth.validation.js` | Added shared password rules (8-72 chars, common password blacklist) and schemas for password endpoints |
+| `backend/tests/password-lifecycle.test.js` | Comprehensive integration tests for change password, session revocation, tokenVersion, forgot and reset flows |
+| `docs/API.md` | Documented new auth endpoints, parameters, rate limits, and error responses |
+| `docs/BRAND.md` | Documented brand identity, logo mark rationale, theme contrast audit, and icon specifications |
+| `docs/DEPLOYMENT.md` | Added `PUBLIC_APP_URL` to production environment variables table |
+| `docs/IMAGE_CREDITS.md` | Documented provenance and licensing for learner study photo and SVGs |
+| `docs/LAUNCH_CHECKLIST.md` | Added production email sending and `PUBLIC_APP_URL` launch requirements |
+| `docs/SECURITY_AUDIT.md` | Created security audit documentation covering auth hardening, token versioning, and rate limits |
+| `docs/screenshots/before-logo-images-status/` | Baseline screenshots before changes |
+| `docs/screenshots/logo-images-status/` | Full screenshot suite across all 6 themes and viewports |
+| `frontend/public/apple-touch-icon.png` | Replaced with new connecting-mark brand icon |
+| `frontend/public/favicon.ico` | Replaced with multi-size brand icon |
+| `frontend/public/favicon.svg` | Replaced with adaptive light/dark SVG favicon |
+| `frontend/public/icons/icon-192.png` | Replaced with new brand icon |
+| `frontend/public/icons/icon-512.png` | Replaced with new brand icon |
+| `frontend/public/icons/icon-512-maskable.png` | Added maskable brand icon for PWA install |
+| `frontend/public/images/learner-study*.webp` | Self-hosted WebP photos in multiple resolutions for "For learners" block |
+| `frontend/public/og-image.png` | Replaced with high-resolution social share preview image |
+| `frontend/public/site.webmanifest` | Updated web manifest pointing to new brand icons |
+| `frontend/scripts/captureAfterScreenshots.js` | Script for automated after-screenshots |
+| `frontend/scripts/captureBeforeScreenshots.js` | Script for automated before-screenshots |
+| `frontend/scripts/generateBrandAndLearnerAssets.js` | Script generating sharp brand icons and responsive WebP photos |
+| `frontend/scripts/verifyE2EFlows.js` | Automated end-to-end user journey verification script |
+| `frontend/src/App.jsx` | Added routes for `/settings`, `/forgot-password`, and `/reset-password` |
+| `frontend/src/components/ApprovalBanner.jsx` | Component displaying mentor approval status and onboarding checklist |
+| `frontend/src/components/ApprovalBanner.test.jsx` | Unit tests for mentor approval banner states |
+| `frontend/src/components/Footer.jsx` | Replaced old logo with unified `<Logo />` component |
+| `frontend/src/components/Illustrations.jsx` | Added SVGs for how it works steps, role cards, page headers, and tab empty states |
+| `frontend/src/components/Layout.jsx` | Mounted `<ApprovalBanner />` globally for mentor views |
+| `frontend/src/components/Logo.jsx` | Standalone accessible `<Logo />` component with "full" and "mark" variants |
+| `frontend/src/components/Logo.test.jsx` | Unit tests verifying logo rendering, variants, accessible name, and home link |
+| `frontend/src/components/Navbar.jsx` | Integrated `<Logo />` and added "Settings" navigation link |
+| `frontend/src/pages/AuthPage.jsx` | Added "Forgot password?" link and role choice SVG icons |
+| `frontend/src/pages/DashboardPage.jsx` | Added SVGs for guide card and recommendations header |
+| `frontend/src/pages/ForgotPasswordPage.jsx` | Forgot password page with constant success messaging |
+| `frontend/src/pages/ForgotPasswordPage.test.jsx` | Unit tests for forgot password page |
+| `frontend/src/pages/LandingPage.jsx` | Added learner study photo placed above label to align with mentor photo; integrated step SVGs |
+| `frontend/src/pages/MentorBrowsePage.jsx` | Added header SVG beside page title |
+| `frontend/src/pages/MentorEarningsPage.jsx` | Added header SVG beside page title |
+| `frontend/src/pages/ProfilePage.jsx` | Added header SVG beside page title |
+| `frontend/src/pages/ResetPasswordPage.jsx` | Reset password page with in-memory token handling and URL scrub |
+| `frontend/src/pages/ResetPasswordPage.test.jsx` | Unit tests for reset password page |
+| `frontend/src/pages/SessionsPage.jsx` | Added payment and refund status badges and refund explanation copy |
+| `frontend/src/pages/SessionsPage.test.jsx` | Unit tests verifying all payment and refund status badge labels |
+| `frontend/src/pages/SettingsPage.jsx` | Settings page with Account details, Change Password, and Sign out everywhere modal |
+| `frontend/src/pages/SettingsPage.test.jsx` | Unit tests for Settings page |
+| `frontend/src/styles/tokens.css` | Added `--logo-mark` token ensuring >= 3:1 contrast across all themes |
+
+
 

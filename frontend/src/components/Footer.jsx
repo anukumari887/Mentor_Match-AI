@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
+import Logo from './Logo';
 
 export default function Footer() {
   return (
@@ -9,14 +10,7 @@ export default function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="lg:col-span-2">
-            <Link to="/" className="inline-flex items-center gap-2 group">
-              <span className="flex h-7 w-7 items-center justify-center rounded bg-ink text-surface text-xs font-bold font-serif shadow-sm">
-                M
-              </span>
-              <span className="font-serif text-base font-bold tracking-tight text-ink group-hover:text-accent transition-colors">
-                Mentor-Match
-              </span>
-            </Link>
+            <Logo />
             <p className="mt-3 max-w-sm text-xs sm:text-sm leading-relaxed text-ink-muted">
               Direct, 1-on-1 video sessions with approved practitioners. Structured feedback, code review, and career conversations.
             </p>

@@ -3,7 +3,7 @@ const { RedisStore } = require('rate-limit-redis');
 const { getRedisClient, isRedisConnected } = require('../config/redis');
 const logger = require('../config/logger');
 
-function createLimiter(windowMs, max, message) {
+function createLimiter(windowMs, max, message, options = {}) {
   let store;
   try {
     if (isRedisConnected()) {
@@ -11,7 +11,7 @@ function createLimiter(windowMs, max, message) {
       if (typeof client?.call === 'function') {
         store = new RedisStore({
           sendCommand: (...args) => client.call(...args),
-          prefix: 'rl:'
+          prefix: options.prefix || 'rl:'
         });
       } else {
         logger.warn('Redis rate limiter client is unavailable; using the memory store.');
@@ -21,7 +21,7 @@ function createLimiter(windowMs, max, message) {
     logger.warn(`Could not initialize RedisStore for rate limiter, falling back to memory: ${err.message}`);
   }
 
-  return rateLimit({
+  const config = {
     windowMs,
     max,
     standardHeaders: true,
@@ -36,7 +36,13 @@ function createLimiter(windowMs, max, message) {
         }
       });
     }
-  });
+  };
+
+  if (options.keyGenerator) {
+    config.keyGenerator = options.keyGenerator;
+  }
+
+  return rateLimit(config);
 }
 
 // 10 attempts per 15 minutes for auth endpoints (register/login)
@@ -60,8 +66,50 @@ const apiLimiter = createLimiter(
   'Too many requests to the API, please slow down.'
 );
 
+// 5 attempts per 15 minutes per user for change password
+const changePasswordLimiter = createLimiter(
+  15 * 60 * 1000,
+  5,
+  'Too many password change attempts. Please try again after 15 minutes.',
+  {
+    prefix: 'rl:cp:',
+    keyGenerator: (req) => req.user?._id ? String(req.user._id) : (req.ip || 'unknown')
+  }
+);
+
+// 5 attempts per 15 minutes per IP for forgot password
+const forgotPasswordIpLimiter = createLimiter(
+  15 * 60 * 1000,
+  5,
+  'Too many password reset requests from this IP. Please try again after 15 minutes.',
+  { prefix: 'rl:fp-ip:' }
+);
+
+// 3 attempts per hour per email address for forgot password
+const forgotPasswordEmailLimiter = createLimiter(
+  60 * 60 * 1000,
+  3,
+  'Too many password reset requests for this email address. Please try again after 1 hour.',
+  {
+    prefix: 'rl:fp-email:',
+    keyGenerator: (req) => req.body?.email ? String(req.body.email).toLowerCase().trim() : (req.ip || 'unknown')
+  }
+);
+
+// 10 attempts per 15 minutes per IP for reset password
+const resetPasswordLimiter = createLimiter(
+  15 * 60 * 1000,
+  10,
+  'Too many password reset submission attempts. Please try again after 15 minutes.',
+  { prefix: 'rl:rp:' }
+);
+
 module.exports = {
   authLimiter,
   paymentLimiter,
-  apiLimiter
+  apiLimiter,
+  changePasswordLimiter,
+  forgotPasswordIpLimiter,
+  forgotPasswordEmailLimiter,
+  resetPasswordLimiter
 };

@@ -16,6 +16,9 @@ import SessionsPage from './pages/SessionsPage';
 import MentorEarningsPage from './pages/MentorEarningsPage';
 import DashboardPage from './pages/DashboardPage';
 import VideoRoomPage from './pages/VideoRoomPage';
+import SettingsPage from './pages/SettingsPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -30,6 +33,9 @@ export default function App() {
               <Route index element={<LandingPage />} />
               <Route path="login" element={<AuthPage mode="login" />} />
               <Route path="register" element={<AuthPage mode="register" />} />
+              <Route path="forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="reset-password" element={<ResetPasswordPage />} />
+              <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="dashboard" element={<ProtectedRoute roles={['learner']}><DashboardPage /></ProtectedRoute>} />
               <Route path="mentors" element={<ProtectedRoute><MentorBrowsePage /></ProtectedRoute>} />

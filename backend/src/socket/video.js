@@ -50,6 +50,9 @@ function createVideoServer(httpServer) {
       const payload = verifyToken(token);
       const user = await User.findById(payload.id);
       if (!user || !user.isActive) return next(new Error('UNAUTHORIZED'));
+      const tokenVersion = payload.tv !== undefined ? payload.tv : 0;
+      const currentVersion = user.tokenVersion || 0;
+      if (tokenVersion !== currentVersion) return next(new Error('UNAUTHORIZED'));
       socket.data.user = user;
       return next();
     } catch {

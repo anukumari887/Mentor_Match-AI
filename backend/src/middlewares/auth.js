@@ -31,6 +31,12 @@ async function requireAuth(req, res, next) {
       return next(new AppError('User account has been deactivated.', 403, 'ACCOUNT_DEACTIVATED'));
     }
 
+    const tokenVersion = decoded.tv !== undefined ? decoded.tv : 0;
+    const currentVersion = user.tokenVersion || 0;
+    if (tokenVersion !== currentVersion) {
+      return next(new AppError('Invalid or expired authentication session.', 401, 'UNAUTHORIZED'));
+    }
+
     req.user = user;
     next();
   } catch (err) {

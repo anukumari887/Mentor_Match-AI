@@ -5,6 +5,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import { IconHeaderProfile } from '../components/Illustrations';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -136,7 +137,10 @@ export default function ProfilePage() {
       <div className="mb-8 border-b border-border pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p className="text-xs font-semibold tracking-wider uppercase text-accent">Account settings</p>
-          <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink">Profile and availability</h1>
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink flex items-center gap-2.5">
+            <IconHeaderProfile className="w-6 h-6 text-accent shrink-0" />
+            <span>Profile and availability</span>
+          </h1>
           <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-muted">
             <span className="inline-flex items-center gap-1.5 font-medium text-ink">
               <UserRound size={13} className="text-accent" /> {user?.name}

@@ -16,7 +16,12 @@ import { submitComplaint } from '../services/admin';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Avatar from '../components/Avatar';
-import { EmptyStateSessions } from '../components/Illustrations';
+import {
+  EmptyStateSessions,
+  EmptyStateSessionsUpcoming,
+  EmptyStateSessionsPast,
+  EmptyStateSessionsCancelled
+} from '../components/Illustrations';
 
 const TABS = [
   { id: 'upcoming', label: 'Upcoming' },
@@ -139,6 +144,64 @@ export default function SessionsPage() {
     }
   };
 
+  const renderPaymentBadge = (booking) => {
+    if (user?.role !== 'learner') return null;
+
+    // 1. Pending booking not paid yet
+    if (booking.status === 'pending') {
+      const isHoldActive = new Date(booking.expiresAt || booking.startTime).getTime() > Date.now();
+      return (
+        <span className="inline-flex items-center gap-1.5 flex-wrap">
+          <Badge variant="warning" size="sm">Payment pending</Badge>
+          {isHoldActive && (
+            <Link
+              to={`/checkout/${booking._id}`}
+              className="text-xs font-semibold text-accent hover:underline"
+            >
+              Complete payment
+            </Link>
+          )}
+        </span>
+      );
+    }
+
+    // 2. Cancelled bookings
+    if (booking.status === 'cancelled' || booking.status === 'expired') {
+      if (booking.paymentStatus === 'refund_due') {
+        return <Badge variant="warning" size="sm">Refund pending</Badge>;
+      }
+      if (booking.paymentStatus === 'refunded') {
+        return (
+          <Badge variant="success" size="sm">
+            Refunded{booking.refundReference ? ` (${booking.refundReference})` : ''}
+          </Badge>
+        );
+      }
+      if (booking.paymentEarned || (booking.cancelledBy === 'learner' && booking.paymentStatus === 'paid')) {
+        return <Badge variant="neutral" size="sm">No refund (cancelled late)</Badge>;
+      }
+      if (!booking.paymentStatus || booking.paymentStatus === 'created') {
+        return <Badge variant="neutral" size="sm">Payment expired</Badge>;
+      }
+    }
+
+    // 3. Paid
+    if (booking.paymentStatus === 'paid') {
+      return <Badge variant="success" size="sm">Paid</Badge>;
+    }
+
+    // 4. Failed
+    if (booking.paymentStatus === 'failed') {
+      return <Badge variant="danger" size="sm">Payment failed</Badge>;
+    }
+
+    return null;
+  };
+
+  const refundPendingCount = user?.role === 'learner'
+    ? bookings.filter((b) => b.paymentStatus === 'refund_due').length
+    : 0;
+
   return (
     <section className="page-wrap flex-1 py-10 sm:py-14 bg-bg text-ink transition-colors">
       <header className="mb-6 border-b border-border pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -150,6 +213,15 @@ export default function SessionsPage() {
           </p>
         </div>
       </header>
+
+      {refundPendingCount > 0 && (
+        <div className="mb-5 inline-flex items-center gap-2 rounded border border-warning/40 bg-warning/10 px-3.5 py-1.5 text-xs text-ink font-medium">
+          <Clock size={13} className="text-warning shrink-0" aria-hidden="true" />
+          <span>
+            {refundPendingCount} {refundPendingCount === 1 ? 'refund' : 'refunds'} pending
+          </span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div aria-label="Session status" className="flex gap-2 border-b border-border mb-6 overflow-x-auto" role="tablist">
@@ -188,7 +260,9 @@ export default function SessionsPage() {
 
       {!loading && !error && visibleBookings.length === 0 && (
         <Card variant="flat" padding="lg" className="text-center my-6">
-          <EmptyStateSessions />
+          {activeTab === 'upcoming' && <EmptyStateSessionsUpcoming />}
+          {activeTab === 'past' && <EmptyStateSessionsPast />}
+          {activeTab === 'cancelled' && <EmptyStateSessionsCancelled />}
           <h2 className="mt-2 font-serif text-xl sm:text-2xl font-semibold text-ink">No {activeTab} sessions</h2>
           <p className="mt-1.5 text-xs sm:text-sm text-ink-muted max-w-sm mx-auto">
             Your booked mentoring time and past session history will appear here.
@@ -218,6 +292,7 @@ export default function SessionsPage() {
                         Session with {otherUser?.name || 'Mentor'}
                       </h2>
                       {getStatusBadge(booking.status)}
+                      {renderPaymentBadge(booking)}
                     </div>
                     <p className="mt-1.5 text-xs text-ink-muted flex items-center gap-1.5">
                       <Clock size={12} className="text-accent" />
@@ -226,6 +301,17 @@ export default function SessionsPage() {
                     <p className="mt-1 text-xs font-semibold text-ink">
                       ₹{new Intl.NumberFormat('en-IN').format(booking.priceAtBooking)}
                     </p>
+
+                    {user?.role === 'learner' && booking.status === 'cancelled' && booking.paymentStatus === 'refund_due' && (
+                      <p className="mt-2 text-xs text-ink-muted">
+                        Refund pending: we will update this page when it is processed.
+                      </p>
+                    )}
+                    {user?.role === 'learner' && booking.status === 'cancelled' && booking.paymentStatus === 'refunded' && (
+                      <p className="mt-2 text-xs text-ink-muted">
+                        Refunded. It can take several working days to reach your account.
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">

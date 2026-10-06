@@ -169,6 +169,33 @@ async function listBookings(req, res, next) {
       .populate('learnerId', 'name')
       .populate('mentorId', 'name')
       .lean();
+
+    // Attach payment status and refund reference for learner / admin
+    if (req.user.role === 'learner' || req.user.role === 'admin') {
+      const bookingIds = bookings.map((b) => b._id);
+      const paymentFilter = { bookingId: { $in: bookingIds } };
+      if (req.user.role === 'learner') {
+        paymentFilter.learnerId = req.user._id;
+      }
+      const payments = await Payment.find(paymentFilter)
+        .select('bookingId status refundReference earned')
+        .lean();
+      const paymentsByBookingId = new Map(payments.map((p) => [String(p.bookingId), p]));
+
+      for (const booking of bookings) {
+        const payment = paymentsByBookingId.get(String(booking._id));
+        if (payment) {
+          booking.paymentStatus = payment.status;
+          booking.refundReference = payment.refundReference || '';
+          booking.paymentEarned = Boolean(payment.earned);
+        } else {
+          booking.paymentStatus = booking.status === 'pending' ? 'created' : null;
+          booking.refundReference = '';
+          booking.paymentEarned = false;
+        }
+      }
+    }
+
     return res.status(200).json({ bookings });
   } catch (error) {
     return next(error);
@@ -183,6 +210,26 @@ async function getBooking(req, res, next) {
       .populate('mentorId', 'name')
       .lean();
     if (!booking) return next(new AppError('Booking not found.', 404, 'NOT_FOUND'));
+
+    if (req.user.role === 'learner' || req.user.role === 'admin') {
+      const paymentFilter = { bookingId: booking._id };
+      if (req.user.role === 'learner') {
+        paymentFilter.learnerId = req.user._id;
+      }
+      const payment = await Payment.findOne(paymentFilter)
+        .select('status refundReference earned')
+        .lean();
+      if (payment) {
+        booking.paymentStatus = payment.status;
+        booking.refundReference = payment.refundReference || '';
+        booking.paymentEarned = Boolean(payment.earned);
+      } else {
+        booking.paymentStatus = booking.status === 'pending' ? 'created' : null;
+        booking.refundReference = '';
+        booking.paymentEarned = false;
+      }
+    }
+
     return res.status(200).json({ booking });
   } catch (error) {
     return next(error);

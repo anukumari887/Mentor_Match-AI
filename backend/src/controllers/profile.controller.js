@@ -7,6 +7,7 @@ const {
 } = require('../validations/profile.validation');
 const { AppError } = require('../utils/errors');
 const { clearLearnerRecommendations } = require('../services/recommendations/cache');
+const { formatMentorProfile } = require('../utils/completeness');
 
 async function getProfile(req, res, next) {
   try {
@@ -23,6 +24,7 @@ async function getProfile(req, res, next) {
       if (!profile) {
         profile = await MentorProfile.create({ userId: _id });
       }
+      profile = formatMentorProfile(profile);
     } else {
       return next(new AppError('Admin users do not have a mentor/learner profile.', 400, 'NO_PROFILE'));
     }
@@ -53,6 +55,7 @@ async function updateProfile(req, res, next) {
         { $set: validatedData },
         { new: true, upsert: true, runValidators: true }
       );
+      updatedProfile = formatMentorProfile(updatedProfile);
     } else {
       return next(new AppError('Admins cannot update learner/mentor profiles.', 400, 'INVALID_ROLE'));
     }

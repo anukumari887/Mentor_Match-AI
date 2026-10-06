@@ -12,6 +12,8 @@ Mentor-Match AI is a full-stack web platform where learners find their best-fit 
 - **Dual Payment Gateways:** Zero-dependency built-in mock gateway for local development and official Razorpay adapter with raw-body HMAC webhook signature validation.
 - **In-Browser Video Sessions:** Peer-to-peer WebRTC video calling mediated by authenticated Socket.IO signaling with join-window enforcement.
 - **Role-Based Access Control:** Separate optimized portals for **Learners**, **Mentors**, and **Admins**.
+- **Account Security & Password Settings:** Dedicated Settings portal (`/settings`) for all three roles with secure password change (invalidating other active sessions), universal "Sign out of all devices", and cryptographic token-based "Forgot password" flow (`/forgot-password`, `/reset-password`).
+- **Mentor Approval & Payment Transparency:** Pre-approval status tracking banner for onboarding mentors with a live missing-items checklist, alongside learner payment and refund status tracking across session bookings.
 - **Observability:** Prometheus metrics scraping and pre-provisioned Grafana monitoring dashboards.
 
 ---
@@ -74,13 +76,13 @@ Run all unit, integration, and ML tests locally:
 # Run all test suites
 npm test
 
-# Run backend unit, integration, and full-journey tests (14 suites, 78 tests)
+# Run backend unit, integration, and full-journey tests (15 suites, 94 tests)
 npm --prefix backend test
 
 # Run backend ESLint check
 npm --prefix backend run lint
 
-# Run frontend Vitest suite (14 suites, 26 tests)
+# Run frontend Vitest suite (22 suites, 52 tests)
 npm --prefix frontend run test
 
 # Run frontend production bundle build
@@ -113,6 +115,9 @@ npm run test:ml
 ## Documentation
 
 - [`docs/API.md`](docs/API.md): Comprehensive API reference for all backend endpoints.
+- [`docs/BRAND.md`](docs/BRAND.md): Brand mark specifications, color token contrast, and visual guidelines.
+- [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md): Comprehensive security audit matrix, threat model, and verified controls.
+- [`docs/IMAGE_CREDITS.md`](docs/IMAGE_CREDITS.md): Editorial image credits, licensing, and asset provenance.
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md): Production deployment guides for Single Server (VPS + Docker + Caddy) and AWS ECS Fargate + MongoDB Atlas + ElastiCache.
 - [`docs/LAUNCH_CHECKLIST.md`](docs/LAUNCH_CHECKLIST.md): Production launch checklist and Human Gates review.
 

@@ -7,7 +7,7 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Skeleton from '../components/Skeleton';
 import Avatar from '../components/Avatar';
-import { EmptyStateMentorSearch } from '../components/Illustrations';
+import { EmptyStateMentorSearch, IconHeaderBrowse } from '../components/Illustrations';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -57,7 +57,10 @@ export default function MentorBrowsePage() {
       {/* Header */}
       <header className="mb-7 border-b border-border pb-6">
         <p className="text-xs font-semibold tracking-wider uppercase text-accent">Practitioners Directory</p>
-        <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink">Browse mentors</h1>
+        <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink flex items-center gap-2.5">
+          <IconHeaderBrowse className="w-6 h-6 text-accent shrink-0" />
+          <span>Browse mentors</span>
+        </h1>
         <p className="mt-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-ink-muted">
           Filter by technical skills, domain expertise, and price to find someone suited to your exact next step.
         </p>

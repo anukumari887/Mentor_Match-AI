@@ -65,4 +65,72 @@ describe('SessionsPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Review submitted. Thank you.');
     expect(submitReview).toHaveBeenCalledWith({ bookingId: 'completed-booking-id', rating: 5, comment: 'Very useful session.' });
   });
+
+  it('renders payment status badges and refund messages accurately for learner bookings', async () => {
+    const upcomingPaid = {
+      _id: 'paid-booking',
+      mentorId: { _id: 'mentor-1', name: 'Dev Lead' },
+      startTime: new Date(Date.now() + 3600000).toISOString(),
+      endTime: new Date(Date.now() + 7200000).toISOString(),
+      priceAtBooking: 1000,
+      status: 'confirmed',
+      paymentStatus: 'paid'
+    };
+
+    const cancelledRefundDue = {
+      _id: 'refund-due-booking',
+      mentorId: { _id: 'mentor-2', name: 'Cloud Architect' },
+      startTime: new Date(Date.now() + 86400000).toISOString(),
+      endTime: new Date(Date.now() + 90000000).toISOString(),
+      priceAtBooking: 1200,
+      status: 'cancelled',
+      paymentStatus: 'refund_due'
+    };
+
+    const cancelledRefunded = {
+      _id: 'refunded-booking',
+      mentorId: { _id: 'mentor-3', name: 'System Designer' },
+      startTime: new Date(Date.now() + 186400000).toISOString(),
+      endTime: new Date(Date.now() + 190000000).toISOString(),
+      priceAtBooking: 1500,
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      refundReference: 'rfnd_demo_123'
+    };
+
+    const cancelledLate = {
+      _id: 'late-cancel-booking',
+      mentorId: { _id: 'mentor-4', name: 'Frontend Lead' },
+      startTime: new Date(Date.now() + 286400000).toISOString(),
+      endTime: new Date(Date.now() + 290000000).toISOString(),
+      priceAtBooking: 800,
+      status: 'cancelled',
+      paymentStatus: 'paid',
+      cancelledBy: 'learner',
+      paymentEarned: true
+    };
+
+    listBookings.mockResolvedValue([upcomingPaid, cancelledRefundDue, cancelledRefunded, cancelledLate]);
+
+    render(
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <SessionsPage />
+      </MemoryRouter>
+    );
+
+    // Upcoming tab shows "Paid" badge
+    expect(await screen.findByText('Paid')).toBeInTheDocument();
+
+    // Switch to Cancelled tab
+    fireEvent.click(screen.getByRole('tab', { name: 'Cancelled' }));
+
+    // Badges
+    expect(await screen.findByText('Refund pending')).toBeInTheDocument();
+    expect(screen.getByText('Refunded (rfnd_demo_123)')).toBeInTheDocument();
+    expect(screen.getByText('No refund (cancelled late)')).toBeInTheDocument();
+
+    // Refund notice copy
+    expect(screen.getByText(/refund pending: we will update this page when it is processed/i)).toBeInTheDocument();
+    expect(screen.getByText(/refunded\. it can take several working days to reach your account/i)).toBeInTheDocument();
+  });
 });

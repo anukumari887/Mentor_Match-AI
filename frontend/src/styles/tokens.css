@@ -35,6 +35,7 @@
   --focus-ring: #9c3820;
   --badge-bg: #f3f0ec;
   --badge-text: #181716;
+  --logo-mark: var(--accent);
   --img-dim: brightness(1);
 }
 

@@ -291,3 +291,159 @@ export function EmptyStateNetworkError({ className = 'w-40 h-32 mx-auto mb-3', .
     </svg>
   );
 }
+
+// -------------------------------------------------------------
+// SESSIONS TAB EMPTY STATES (Upcoming, Past, Cancelled)
+// -------------------------------------------------------------
+
+export function EmptyStateSessionsUpcoming({ className = 'w-36 h-28 mx-auto mb-3', ...props }) {
+  return (
+    <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <rect x="36" y="26" width="88" height="74" rx="7" fill="var(--surface-raised)" stroke="var(--border)" strokeWidth="1.8" />
+      <path d="M36 34C36 29.58 39.58 26 44 26H116C120.42 26 124 29.58 124 34V42H36V34Z" fill="var(--accent)" fillOpacity="0.15" stroke="var(--border)" strokeWidth="1.2" />
+      <rect x="52" y="20" width="5" height="12" rx="2" fill="var(--accent)" />
+      <rect x="103" y="20" width="5" height="12" rx="2" fill="var(--accent)" />
+      {/* Clock icon inside */}
+      <circle cx="80" cy="68" r="14" fill="var(--surface)" stroke="var(--accent)" strokeWidth="1.5" />
+      <path d="M80 60V68L85 71" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function EmptyStateSessionsPast({ className = 'w-36 h-28 mx-auto mb-3', ...props }) {
+  return (
+    <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      {/* Open notebook / completed ledger */}
+      <rect x="38" y="28" width="84" height="70" rx="6" fill="var(--surface-raised)" stroke="var(--border)" strokeWidth="1.8" />
+      <line x1="80" y1="28" x2="80" y2="98" stroke="var(--border)" strokeWidth="1.5" />
+      <line x1="48" y1="44" x2="70" y2="44" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="48" y1="54" x2="72" y2="54" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="48" y1="64" x2="66" y2="64" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Checkmark in circle */}
+      <circle cx="98" cy="58" r="12" fill="var(--success)" fillOpacity="0.15" stroke="var(--success)" strokeWidth="1.5" />
+      <path d="M93 58L97 62L104 54" stroke="var(--success)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function EmptyStateSessionsCancelled({ className = 'w-36 h-28 mx-auto mb-3', ...props }) {
+  return (
+    <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <rect x="36" y="26" width="88" height="74" rx="7" fill="var(--surface-raised)" stroke="var(--border)" strokeWidth="1.8" />
+      <path d="M36 34C36 29.58 39.58 26 44 26H116C120.42 26 124 29.58 124 34V42H36V34Z" fill="currentColor" fillOpacity="0.08" stroke="var(--border)" strokeWidth="1.2" />
+      <rect x="52" y="20" width="5" height="12" rx="2" fill="currentColor" fillOpacity="0.3" />
+      <rect x="103" y="20" width="5" height="12" rx="2" fill="currentColor" fillOpacity="0.3" />
+      {/* Soft reset icon */}
+      <circle cx="80" cy="68" r="14" fill="var(--surface)" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.5" />
+      <path d="M75 63L85 73M85 63L75 73" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// -------------------------------------------------------------
+// SMALL PAGE HEADER & SECTION TITLE SVGS (24x24 or 28x28)
+// -------------------------------------------------------------
+
+export function IconHeaderBrowse({ className = 'w-6 h-6 text-accent inline-block shrink-0', ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+      <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="11" cy="11" r="2.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function IconHeaderGuide({ className = 'w-6 h-6 text-accent inline-block shrink-0', ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <path d="M4 19.5V5C4 3.9 4.9 3 6 3H20V21H6C4.9 21 4 20.1 4 19.5Z" stroke="currentColor" strokeWidth="2" />
+      <path d="M4 17C4.9 17 6 17.9 6 19H20" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="9" y1="8" x2="16" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="9" y1="12" x2="14" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function IconHeaderRecommendations({ className = 'w-6 h-6 text-accent inline-block shrink-0', ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <path d="M12 2L14.4 7.6L20.5 8.2L15.8 12.3L17.2 18.2L12 15.1L6.8 18.2L8.2 12.3L3.5 8.2L9.6 7.6L12 2Z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function IconHeaderProfile({ className = 'w-6 h-6 text-accent inline-block shrink-0', ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <circle cx="12" cy="8" r="4.5" stroke="currentColor" strokeWidth="2" />
+      <path d="M4 20C4 16.5 7.5 14.5 12 14.5C16.5 14.5 20 16.5 20 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function IconHeaderAvailability({ className = 'w-6 h-6 text-accent inline-block shrink-0', ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" strokeWidth="2" />
+      <line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="8" y1="2" x2="8" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <line x1="16" y1="2" x2="16" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="12" cy="15" r="2" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function IconHeaderEarnings({ className = 'w-6 h-6 text-accent inline-block shrink-0', ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" strokeWidth="2" />
+      <path d="M16 12C16 13.1 16.9 14 18 14H22V10H18C16.9 10 16 10.9 16 12Z" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="19" cy="12" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function IconHeaderMentorDashboard({ className = 'w-6 h-6 text-accent inline-block shrink-0', ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="13" y="3" width="8" height="5" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="13" y="11" width="8" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="3" y="14" width="8" height="7" rx="2" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+export function IconChoiceLearner({ className = 'w-5 h-5 mx-auto mb-1 text-inherit', ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <path d="M12 3L2 8.5L12 14L22 8.5L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M6 10.7V16.5C6 18.5 8.7 20.5 12 20.5C15.3 20.5 18 18.5 18 16.5V10.7" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M22 8.5V15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function IconChoiceMentor({ className = 'w-5 h-5 mx-auto mb-1 text-inherit', ...props }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M4 20C4 16.7 7.6 14 12 14C16.4 14 20 16.7 20 20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M16 11L18 13L22 9" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function EmptyStateRecommendations({ className = 'w-36 h-28 mx-auto mb-3', ...props }) {
+  return (
+    <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true" focusable="false" {...props}>
+      <circle cx="80" cy="60" r="36" fill="var(--surface-raised)" stroke="var(--border)" strokeWidth="1.8" />
+      <path d="M80 38L83.5 49L95 50L86 58L89 69L80 63L71 69L74 58L65 50L76.5 49L80 38Z" fill="var(--accent)" fillOpacity="0.2" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
+      <circle cx="106" cy="42" r="3" fill="var(--accent)" />
+      <circle cx="54" cy="78" r="2.5" fill="var(--accent)" />
+    </svg>
+  );
+}
+
+
