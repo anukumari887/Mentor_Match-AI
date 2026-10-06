@@ -265,7 +265,55 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
      - Command: `curl.exe -s "http://localhost:9090/api/v1/query?query=http_requests_total"`
      - Output: Live vector data returned for `backend:5000` routes (`/api/health`, `/metrics`).
 - **What is next:**
-  - Phase 11: Production build, CI/CD, and deployment files.
+  - Phase 11 completed. Next: Phase 12 (Hardening and final verification).
 
+---
 
-
+### Phase 11: Production Build, CI/CD, Deployment Files (Completed)
+- **Status:** COMPLETED
+- **What was built:**
+  - Production multi-stage Dockerfiles:
+    - `backend/Dockerfile.prod`: Multi-stage, production dependencies only, runs as non-root `node` user on port 5000 with healthcheck.
+    - `frontend/Dockerfile.prod`: Multi-stage build (`vite build`) output copied to lightweight `nginx:alpine` static server with SPA fallback (`try_files $uri /index.html`), gzip compression, and caching headers (`nginx.conf`).
+    - `ml-service/Dockerfile`: Clean Python 3.13 slim container, runs as non-root `app` user with healthcheck.
+  - Production Docker Compose:
+    - `docker-compose.prod.yml`: Configured without host volume mounts, strict depends_on healthchecks, and production environment defaults.
+  - CI/CD Workflows:
+    - `.github/workflows/ci.yml`: Runs on push and pull request. Executes backend lint, Jest tests against live MongoDB and Redis services, frontend vitest, frontend production build, ML service pytest, and builds all 3 Docker images.
+    - `.github/workflows/deploy.yml`: Production ECS continuous deployment. Guarded with an `if` expression to skip cleanly when AWS secrets are absent.
+  - Deployment Documentation:
+    - `docs/DEPLOYMENT.md`: Comprehensive deployment guide explaining Path A (single server VPS + Docker + Caddy with automatic SSL) and Path B (AWS ECS Fargate + ECR + Atlas + ElastiCache), complete environment variables reference, and go-live checklist.
+  - ESLint Setup:
+    - Installed `eslint@8.57.1` in backend devDependencies and configured `.eslintrc.json`. Cleaned all lint warnings (0 errors, 0 warnings).
+- **What was tested & real outputs:**
+  1. Production Docker Images Build:
+     - Command: `docker compose -f docker-compose.prod.yml build`
+     - Output:
+       ```
+       Image mentor-match-ai-frontend Built
+       Image mentor-match-ai-ml-service Built
+       Image mentor-match-ai-backend Built
+       ```
+  2. YAML Workflow Validation:
+     - Command: `python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml')); yaml.safe_load(open('.github/workflows/deploy.yml')); print('Both workflows are 100% valid YAML!')"`
+     - Output: `Both workflows are 100% valid YAML!`
+  3. Production Compose Configuration Validation:
+     - Command: `docker compose -f docker-compose.prod.yml config`
+     - Output: Exited with code 0; all services resolved cleanly.
+  4. Backend Linting:
+     - Command: `npm --prefix backend run lint`
+     - Output: `0 problems (0 errors, 0 warnings)`
+  5. Backend Test Suite:
+     - Command: `npm --prefix backend test`
+     - Output: `Test Suites: 13 passed, 13 total; Tests: 69 passed, 69 total; Time: 33.407s`
+  6. Frontend Test Suite:
+     - Command: `npm --prefix frontend run test`
+     - Output: `Test Files: 14 passed (14); Tests: 26 passed (26); Duration: 36.27s`
+  7. Frontend Production Bundle Build:
+     - Command: `npm --prefix frontend run build`
+     - Output: `✓ built in 32.01s (dist/index.html, dist/assets/index-*.css, dist/assets/index-*.js)`
+  8. ML Service Test Suite:
+     - Command: `npm run test:ml`
+     - Output: `8 passed, 1 warning in 3.28s`
+- **What is next:**
+  - Phase 12: Hardening and final verification (Full-journey integration test, Section 17 checklist verification with proofs, API documentation, README update).

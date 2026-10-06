@@ -1,0 +1,68 @@
+name: Deploy to Production (AWS ECS)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & Deploy to ECS
+    runs-on: ubuntu-latest
+    # Guard: only run when required deployment secrets exist; otherwise skip cleanly
+    if: ${{ secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.AWS_REGION != '' && secrets.ECR_REGISTRY != '' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build, tag, and push Backend to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/mentor-match-backend:$IMAGE_TAG -t $ECR_REGISTRY/mentor-match-backend:latest -f backend/Dockerfile.prod backend
+          docker push $ECR_REGISTRY/mentor-match-backend:$IMAGE_TAG
+          docker push $ECR_REGISTRY/mentor-match-backend:latest
+
+      - name: Build, tag, and push Frontend to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/mentor-match-frontend:$IMAGE_TAG -t $ECR_REGISTRY/mentor-match-frontend:latest -f frontend/Dockerfile.prod frontend
+          docker push $ECR_REGISTRY/mentor-match-frontend:$IMAGE_TAG
+          docker push $ECR_REGISTRY/mentor-match-frontend:latest
+
+      - name: Build, tag, and push ML Service to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/mentor-match-ml-service:$IMAGE_TAG -t $ECR_REGISTRY/mentor-match-ml-service:latest -f ml-service/Dockerfile ml-service
+          docker push $ECR_REGISTRY/mentor-match-ml-service:$IMAGE_TAG
+          docker push $ECR_REGISTRY/mentor-match-ml-service:latest
+
+      - name: Trigger ECS Service Redeploy
+        run: |
+          aws ecs update-service --cluster mentor-match-cluster --service mentor-match-backend-service --force-new-deployment
+          aws ecs update-service --cluster mentor-match-cluster --service mentor-match-frontend-service --force-new-deployment
+          aws ecs update-service --cluster mentor-match-cluster --service mentor-match-ml-service --force-new-deployment

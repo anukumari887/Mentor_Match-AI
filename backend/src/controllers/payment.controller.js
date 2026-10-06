@@ -1,5 +1,4 @@
 const crypto = require('node:crypto');
-const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const Payout = require('../models/Payout');
 const WebhookEvent = require('../models/WebhookEvent');
@@ -9,7 +8,6 @@ const { AppError } = require('../utils/errors');
 const { webhookFailuresTotal } = require('../utils/metrics');
 const { bookingPaymentSchema, razorpayVerificationSchema } = require('../validations/payment.validation');
 const { createPaymentOrder, confirmPayment } = require('../services/payments/paymentService');
-const { sendBookingCancellation } = require('../services/email');
 
 function safeSignatureMatch(expectedHex, actualHex) {
   if (!/^[a-f\d]+$/i.test(actualHex || '') || actualHex.length !== expectedHex.length) return false;

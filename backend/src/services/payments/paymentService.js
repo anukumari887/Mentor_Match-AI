@@ -1,6 +1,5 @@
 const Booking = require('../../models/Booking');
 const Payment = require('../../models/Payment');
-const User = require('../../models/User');
 const { env } = require('../../config/env');
 const { AppError } = require('../../utils/errors');
 const { getGateway } = require('./gateway');

@@ -1,0 +1,113 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: mentormatch-mongo-prod
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: mentormatch-redis-prod
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: mentormatch-ml-prod
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: mentormatch-backend-prod
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=5000
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/mentormatch}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - ML_SERVICE_URL=http://ml-service:8000
+      - JWT_SECRET=${JWT_SECRET:-production_strong_secret_key_at_least_32_characters_long!}
+      - JWT_EXPIRES_IN=7d
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+      - COOKIE_SECURE=${COOKIE_SECURE:-true}
+      - LOG_LEVEL=info
+      - PAYMENT_MODE=${PAYMENT_MODE:-razorpay}
+      - PLATFORM_FEE_PERCENT=15
+      - FREE_CANCEL_HOURS=24
+      - MIN_BOOKING_LEAD_HOURS=2
+      - SLOT_LOCK_MINUTES=10
+      - ML_TIMEOUT_MS=2000
+      - STUN_URLS=stun:stun.l.google.com:19302
+      - TURN_URL=${TURN_URL:-}
+      - TURN_USERNAME=${TURN_USERNAME:-}
+      - TURN_CREDENTIAL=${TURN_CREDENTIAL:-}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_live_placeholder}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-placeholder_secret_value}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:-placeholder_webhook_secret}
+      - SMTP_HOST=${SMTP_HOST:-localhost}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - EMAIL_FROM=${EMAIL_FROM:-Mentor-Match <no-reply@mentormatch.ai>}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@mentormatch.ai}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-ChangeMeProd123!}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: mentormatch-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
+  redis_data:

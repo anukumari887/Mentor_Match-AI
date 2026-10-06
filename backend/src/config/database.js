@@ -5,8 +5,6 @@ const { env } = require('./env');
 const MAX_RETRIES = 12;
 const RETRY_INTERVAL_MS = 5000;
 
-let isConnected = false;
-
 async function connectMongoWithRetry(uri = env.MONGO_URI) {
   let attempt = 0;
   while (attempt < MAX_RETRIES) {
@@ -16,7 +14,6 @@ async function connectMongoWithRetry(uri = env.MONGO_URI) {
       await mongoose.connect(uri, {
         serverSelectionTimeoutMS: 5000,
       });
-      isConnected = true;
       logger.info('Successfully connected to MongoDB');
       return mongoose.connection;
     } catch (err) {
@@ -31,12 +28,10 @@ async function connectMongoWithRetry(uri = env.MONGO_URI) {
 }
 
 mongoose.connection.on('disconnected', () => {
-  isConnected = false;
   logger.warn('MongoDB disconnected');
 });
 
 mongoose.connection.on('reconnected', () => {
-  isConnected = true;
   logger.info('MongoDB reconnected');
 });
 

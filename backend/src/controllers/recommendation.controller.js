@@ -98,7 +98,7 @@ async function getRecommendations(req, res, next) {
         budgetPerHour: learner.budgetPerHour || 0,
         availability: learner.availability || []
       },
-      mentors: mentors.map(({ name, timezone, ratingAvg, ratingCount, ...mentor }) => mentor),
+      mentors: mentors.map(({ name: _name, timezone: _timezone, ratingAvg: _ratingAvg, ratingCount: _ratingCount, ...mentor }) => mentor),
       limit
     };
 
@@ -111,7 +111,7 @@ async function getRecommendations(req, res, next) {
     } catch (error) {
       source = 'fallback';
       logger.warn({ message: error.message }, 'ML recommendation failed; using fallback scorer');
-      ranked = scoreFallback(payload.learner, mentors.map(({ name, timezone, ...mentor }) => mentor), limit);
+      ranked = scoreFallback(payload.learner, mentors.map(({ name: _name, timezone: _timezone, ...mentor }) => mentor), limit);
     }
 
     const profilesById = new Map(mentors.map((mentor) => [mentor.id, mentor]));

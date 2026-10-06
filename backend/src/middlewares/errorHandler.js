@@ -1,6 +1,5 @@
 const { ZodError } = require('zod');
 const logger = require('../config/logger');
-const { AppError } = require('../utils/errors');
 const { env } = require('../config/env');
 
 // eslint-disable-next-line no-unused-vars

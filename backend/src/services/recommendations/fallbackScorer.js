@@ -51,7 +51,7 @@ function scoreFallback(learner, mentors, limit = 5) {
   });
 
   results.sort((left, right) => right.score - left.score || right.ratingAvg - left.ratingAvg || right.experienceYears - left.experienceYears);
-  return results.slice(0, limit).map(({ ratingAvg, experienceYears, ...item }) => item);
+  return results.slice(0, limit).map(({ ratingAvg: _ratingAvg, experienceYears: _experienceYears, ...item }) => item);
 }
 
 module.exports = { normalizeSkill, scoreFallback };

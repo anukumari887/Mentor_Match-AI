@@ -30,7 +30,6 @@ jest.mock('../src/utils/token', () => ({
 const bcrypt = require('bcryptjs');
 const User = require('../src/models/User');
 const LearnerProfile = require('../src/models/LearnerProfile');
-const MentorProfile = require('../src/models/MentorProfile');
 const { verifyToken, generateToken, setAuthCookie } = require('../src/utils/token');
 const { requireAuth, requireRole } = require('../src/middlewares/auth');
 const authController = require('../src/controllers/auth.controller');
