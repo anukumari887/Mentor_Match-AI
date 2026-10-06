@@ -2,23 +2,17 @@ import React, { useEffect, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
-  ArrowUpDown,
-  Award,
   Calendar,
   Check,
   CheckCircle2,
-  ChevronRight,
   ClipboardCheck,
   CreditCard,
   DollarSign,
   HelpCircle,
-  MessageSquare,
   RefreshCw,
   Search,
-  ShieldAlert,
   ShieldCheck,
   UserCheck,
-  UserX,
   Users,
   X
 } from 'lucide-react';
@@ -36,6 +30,8 @@ import {
   resolveComplaint
 } from '../services/admin';
 import { approveMentor, listPendingMentors, rejectMentor } from '../services/mentors';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: Activity },
@@ -271,51 +267,48 @@ export default function AdminPage() {
   const formatRupees = (paise) => `Rs. ${(Number(paise || 0) / 100).toLocaleString('en-IN')}`;
 
   return (
-    <div className="page-wrap flex-1 py-8 sm:py-12">
+    <div className="page-wrap flex-1 py-8 sm:py-12 bg-bg text-ink transition-colors">
       {/* Page Header */}
-      <div className="mb-8 border-b border-slate-200 pb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div className="mb-8 border-b border-border pb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700">
-            <ShieldCheck size={14} />
-            <span>Admin Control Center</span>
-          </div>
-          <h1 className="mt-1.5 text-3xl font-extrabold text-slate-900 sm:text-4xl">Platform Operations</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="text-xs font-semibold tracking-wider uppercase text-accent">Admin Control Center</p>
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink">Platform Operations</h1>
+          <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
             Monitor transactions, verify mentors, manage user access, issue refunds, and process payouts.
           </p>
         </div>
 
         <button
           onClick={() => setRefreshKey((k) => k + 1)}
-          className="btn-secondary self-start md:self-auto inline-flex items-center gap-2 text-xs"
+          className="inline-flex items-center gap-2 rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised transition-colors self-start md:self-auto"
           type="button"
         >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
           <span>Refresh Data</span>
         </button>
       </div>
 
       {/* Feedback Alerts */}
       {error && (
-        <div className="notice-error mb-6 flex items-center justify-between gap-3 rounded-lg p-4 text-sm font-medium" role="alert">
+        <div className="mb-6 flex items-center justify-between gap-3 rounded border border-danger/40 bg-danger/10 p-3.5 text-xs sm:text-sm text-danger font-medium" role="alert">
           <span>{error}</span>
-          <button className="text-slate-400 hover:text-slate-600" onClick={() => setError('')} type="button">
-            <X size={16} />
+          <button className="text-danger hover:opacity-80" onClick={() => setError('')} type="button">
+            <X size={15} />
           </button>
         </div>
       )}
 
       {success && (
-        <div className="rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300 p-4 mb-6 flex items-center justify-between text-sm font-medium">
+        <div className="mb-6 rounded border border-success/40 bg-success/10 p-3.5 text-xs sm:text-sm font-semibold text-ink flex items-center justify-between">
           <span>{success}</span>
-          <button className="text-emerald-600 hover:text-emerald-800" onClick={() => setSuccess('')} type="button">
-            <X size={16} />
+          <button className="text-ink-muted hover:text-ink" onClick={() => setSuccess('')} type="button">
+            <X size={15} />
           </button>
         </div>
       )}
 
       {/* Tab Navigation */}
-      <div className="flex overflow-x-auto gap-2 border-b border-slate-200 mb-8 pb-px">
+      <div className="flex overflow-x-auto gap-2 border-b border-border mb-8 pb-px">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isSelected = activeTab === tab.id;
@@ -327,14 +320,14 @@ export default function AdminPage() {
                 setError('');
                 setSuccess('');
               }}
-              className={`inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-bold transition-all ${
+              className={`inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all outline-none ${
                 isSelected
-                  ? 'border-brand-600 text-brand-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-ink-muted hover:text-ink hover:border-border'
               }`}
               type="button"
             >
-              <Icon size={16} />
+              <Icon size={14} />
               <span>{tab.label}</span>
             </button>
           );
@@ -343,8 +336,7 @@ export default function AdminPage() {
 
       {/* Content Spinner */}
       {loading && (
-        <div className="py-20 text-center text-sm text-slate-600" role="status">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+        <div className="py-20 text-center text-xs text-ink-muted" role="status">
           <p className="mt-3 font-medium">Loading details...</p>
         </div>
       )}
@@ -354,108 +346,108 @@ export default function AdminPage() {
         <div className="space-y-8">
           {/* Key Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="card p-5">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Gross Merchandise Value</span>
-              <p className="mt-2 text-2xl font-extrabold text-slate-900">{formatRupees(stats.financials.gmv)}</p>
-              <span className="mt-1 block text-xs text-emerald-600 font-semibold">Total Paid Consultation Volume</span>
-            </div>
+            <Card variant="default" padding="md">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Gross Merchandise Value</span>
+              <p className="mt-2 font-serif text-2xl font-bold text-ink">{formatRupees(stats.financials.gmv)}</p>
+              <span className="mt-1 block text-xs text-success font-medium">Total Paid Consultation Volume</span>
+            </Card>
 
-            <div className="card p-5">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Platform Revenue</span>
-              <p className="mt-2 text-2xl font-extrabold text-brand-700">{formatRupees(stats.financials.platformFees)}</p>
-              <span className="mt-1 block text-xs text-slate-500">Platform Commission (15%)</span>
-            </div>
+            <Card variant="default" padding="md">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Platform Revenue</span>
+              <p className="mt-2 font-serif text-2xl font-bold text-accent">{formatRupees(stats.financials.platformFees)}</p>
+              <span className="mt-1 block text-xs text-ink-muted">Platform Commission (15%)</span>
+            </Card>
 
-            <div className="card p-5">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Owed to Mentors</span>
-              <p className="mt-2 text-2xl font-extrabold text-slate-900">{formatRupees(stats.financials.owedToMentors)}</p>
-              <span className="mt-1 block text-xs text-slate-500">Net Balance Awaiting Payout</span>
-            </div>
+            <Card variant="default" padding="md">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Owed to Mentors</span>
+              <p className="mt-2 font-serif text-2xl font-bold text-ink">{formatRupees(stats.financials.owedToMentors)}</p>
+              <span className="mt-1 block text-xs text-ink-muted">Net Balance Awaiting Payout</span>
+            </Card>
 
-            <div className="card p-5 border-amber-300 bg-amber-50/20 dark:border-amber-800 dark:bg-amber-950/20">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Refunds Due</span>
-              <p className="mt-2 text-2xl font-extrabold text-amber-700 dark:text-amber-400">
+            <Card variant="raised" padding="md" className="border-warning/40 bg-warning/5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-warning">Refunds Due</span>
+              <p className="mt-2 font-serif text-2xl font-bold text-warning">
                 {stats.refundsDue.count} ({formatRupees(stats.refundsDue.amount)})
               </p>
-              <span className="mt-1 block text-xs text-amber-600 font-semibold">Cancelled / Expired Actions</span>
-            </div>
+              <span className="mt-1 block text-xs text-warning/90 font-medium">Cancelled / Expired Actions</span>
+            </Card>
           </div>
 
           {/* Breakdown Sections */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Users Breakdown */}
-            <div className="card p-6">
-              <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Users size={18} className="text-brand-600" />
+            <Card variant="default" padding="md">
+              <h2 className="font-serif text-base font-semibold text-ink mb-3.5 flex items-center gap-2">
+                <Users size={16} className="text-accent" />
                 <span>Users ({stats.users.total})</span>
               </h2>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-600">Learners</span>
-                  <span className="font-bold text-slate-900">{stats.users.learners}</span>
+              <div className="space-y-2 text-xs sm:text-sm">
+                <div className="flex justify-between py-1.5 border-b border-border/60">
+                  <span className="text-ink-muted">Learners</span>
+                  <span className="font-semibold text-ink">{stats.users.learners}</span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-600">Mentors</span>
-                  <span className="font-bold text-slate-900">{stats.users.mentors}</span>
+                <div className="flex justify-between py-1.5 border-b border-border/60">
+                  <span className="text-ink-muted">Mentors</span>
+                  <span className="font-semibold text-ink">{stats.users.mentors}</span>
                 </div>
                 <div className="flex justify-between py-1.5">
-                  <span className="text-slate-600">Administrators</span>
-                  <span className="font-bold text-slate-900">{stats.users.admins}</span>
+                  <span className="text-ink-muted">Administrators</span>
+                  <span className="font-semibold text-ink">{stats.users.admins}</span>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Mentors Approval Breakdown */}
-            <div className="card p-6">
-              <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <ClipboardCheck size={18} className="text-brand-600" />
+            <Card variant="default" padding="md">
+              <h2 className="font-serif text-base font-semibold text-ink mb-3.5 flex items-center gap-2">
+                <ClipboardCheck size={16} className="text-accent" />
                 <span>Mentor Status ({stats.mentors.total})</span>
               </h2>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-600">Approved (Active)</span>
-                  <span className="font-bold text-emerald-600">{stats.mentors.approved}</span>
+              <div className="space-y-2 text-xs sm:text-sm">
+                <div className="flex justify-between py-1.5 border-b border-border/60">
+                  <span className="text-ink-muted">Approved (Active)</span>
+                  <span className="font-semibold text-success">{stats.mentors.approved}</span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-600">Pending Review</span>
-                  <span className="font-bold text-amber-600">{stats.mentors.pending}</span>
+                <div className="flex justify-between py-1.5 border-b border-border/60">
+                  <span className="text-ink-muted">Pending Review</span>
+                  <span className="font-semibold text-warning">{stats.mentors.pending}</span>
                 </div>
                 <div className="flex justify-between py-1.5">
-                  <span className="text-slate-600">Rejected</span>
-                  <span className="font-bold text-rose-600">{stats.mentors.rejected}</span>
+                  <span className="text-ink-muted">Rejected</span>
+                  <span className="font-semibold text-danger">{stats.mentors.rejected}</span>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Bookings Breakdown */}
-            <div className="card p-6">
-              <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Calendar size={18} className="text-brand-600" />
+            <Card variant="default" padding="md">
+              <h2 className="font-serif text-base font-semibold text-ink mb-3.5 flex items-center gap-2">
+                <Calendar size={16} className="text-accent" />
                 <span>Bookings ({stats.bookings.total})</span>
               </h2>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Completed</span>
-                  <span className="font-bold text-slate-900">{stats.bookings.completed}</span>
+              <div className="space-y-2 text-xs sm:text-sm">
+                <div className="flex justify-between py-1 border-b border-border/60">
+                  <span className="text-ink-muted">Completed</span>
+                  <span className="font-semibold text-ink">{stats.bookings.completed}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Confirmed (Upcoming)</span>
-                  <span className="font-bold text-emerald-600">{stats.bookings.confirmed}</span>
+                <div className="flex justify-between py-1 border-b border-border/60">
+                  <span className="text-ink-muted">Confirmed (Upcoming)</span>
+                  <span className="font-semibold text-success">{stats.bookings.confirmed}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Pending Hold</span>
-                  <span className="font-bold text-amber-600">{stats.bookings.pending}</span>
+                <div className="flex justify-between py-1 border-b border-border/60">
+                  <span className="text-ink-muted">Pending Hold</span>
+                  <span className="font-semibold text-warning">{stats.bookings.pending}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Cancelled</span>
-                  <span className="font-bold text-rose-600">{stats.bookings.cancelled}</span>
+                <div className="flex justify-between py-1 border-b border-border/60">
+                  <span className="text-ink-muted">Cancelled</span>
+                  <span className="font-semibold text-danger">{stats.bookings.cancelled}</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-slate-600">Hold Expired</span>
-                  <span className="font-bold text-slate-500">{stats.bookings.expired}</span>
+                  <span className="text-ink-muted">Hold Expired</span>
+                  <span className="font-semibold text-ink-muted">{stats.bookings.expired}</span>
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       )}
@@ -464,54 +456,54 @@ export default function AdminPage() {
       {!loading && activeTab === 'mentors' && (
         <div className="space-y-6">
           {pendingMentors.length === 0 ? (
-            <div className="card p-12 text-center">
-              <UserCheck className="mx-auto text-brand-600" size={32} />
-              <h2 className="mt-4 text-2xl font-bold text-slate-900">No mentor applications pending</h2>
-              <p className="mt-2 text-sm text-slate-600">
+            <Card variant="flat" padding="lg" className="text-center">
+              <UserCheck className="mx-auto text-accent mb-2" size={32} />
+              <h2 className="font-serif text-xl font-semibold text-ink">No mentor applications pending</h2>
+              <p className="mt-1 text-xs sm:text-sm text-ink-muted">
                 All submitted mentor profiles have been reviewed and processed.
               </p>
-            </div>
+            </Card>
           ) : (
             pendingMentors.map((mentor) => (
-              <article key={mentor.id} className="card p-6">
+              <Card key={mentor.id} variant="default" padding="md">
                 <div className="grid gap-6 md:grid-cols-[1fr_20rem]">
                   <div>
                     <div className="flex items-start gap-3.5">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-800 font-extrabold text-base">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-surface-raised border border-border font-serif font-bold text-sm text-ink">
                         {mentor.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-slate-900">{mentor.name}</h2>
-                        <p className="text-xs text-slate-500">{mentor.email}</p>
-                        <p className="text-sm font-medium text-slate-700 mt-1">{mentor.headline || 'No headline'}</p>
+                        <h2 className="font-serif text-lg font-semibold text-ink">{mentor.name}</h2>
+                        <p className="text-xs text-ink-muted">{mentor.email}</p>
+                        <p className="text-xs font-medium text-ink mt-0.5">{mentor.headline || 'No headline'}</p>
                       </div>
                     </div>
 
-                    <p className="mt-4 text-sm leading-6 text-slate-600">{mentor.bio || 'No biography submitted.'}</p>
+                    <p className="mt-3 text-xs leading-relaxed text-ink-muted">{mentor.bio || 'No biography submitted.'}</p>
 
-                    <div className="mt-4 flex flex-wrap gap-1.5">
+                    <div className="mt-3 flex flex-wrap gap-1.5">
                       {(mentor.skills || []).map((skill) => (
-                        <span key={skill} className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        <span key={skill} className="rounded border border-border bg-surface-raised px-2 py-0.5 text-[11px] font-medium text-ink">
                           {skill}
                         </span>
                       ))}
                     </div>
 
-                    <div className="mt-4 flex gap-6 text-xs text-slate-500">
-                      <span>Experience: <strong className="text-slate-900">{mentor.experienceYears} years</strong></span>
-                      <span>Rate: <strong className="text-slate-900">Rs. {mentor.pricePerHour}/hr</strong></span>
+                    <div className="mt-4 flex gap-6 text-xs text-ink-muted">
+                      <span>Experience: <strong className="text-ink">{mentor.experienceYears} years</strong></span>
+                      <span>Rate: <strong className="text-ink">₹{mentor.pricePerHour}/hr</strong></span>
                     </div>
                   </div>
 
                   {/* Review Actions */}
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-slate-900/50 p-4 flex flex-col justify-between">
+                  <div className="rounded border border-border bg-surface-raised/40 p-4 flex flex-col justify-between">
                     <div>
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Review Action</h3>
+                      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted mb-2">Review Action</h3>
                       <label htmlFor={`reject-reason-${mentor.id}`} className="sr-only">Rejection reason</label>
                       <input
                         id={`reject-reason-${mentor.id}`}
                         aria-label={`Rejection reason for ${mentor.name}`}
-                        className="input-field text-xs mb-3"
+                        className="w-full rounded border border-border bg-surface px-2.5 py-1.5 text-xs text-ink outline-none focus:border-accent mb-3"
                         placeholder="Rejection reason (required if rejecting)"
                         value={reasons[mentor.id] || ''}
                         onChange={(e) => setReasons({ ...reasons, [mentor.id]: e.target.value })}
@@ -520,25 +512,25 @@ export default function AdminPage() {
 
                     <div className="flex gap-2">
                       <button
-                        className="btn-primary flex-1 py-2 text-xs"
+                        className="flex-1 rounded bg-accent py-1.5 px-3 text-xs font-semibold text-accent-text hover:bg-accent-hover transition-colors flex items-center justify-center gap-1"
                         disabled={busyMentorId === mentor.id}
                         onClick={() => handleReviewMentor(mentor, 'approve')}
                         type="button"
                       >
-                        <Check size={14} /> Approve
+                        <Check size={13} /> Approve
                       </button>
                       <button
-                        className="btn-danger flex-1 py-2 text-xs"
+                        className="flex-1 rounded border border-border bg-surface py-1.5 px-3 text-xs font-medium text-ink hover:text-danger hover:border-danger/30 transition-colors flex items-center justify-center gap-1"
                         disabled={busyMentorId === mentor.id}
                         onClick={() => handleReviewMentor(mentor, 'reject')}
                         type="button"
                       >
-                        <X size={14} /> Reject
+                        <X size={13} /> Reject
                       </button>
                     </div>
                   </div>
                 </div>
-              </article>
+              </Card>
             ))
           )}
         </div>
@@ -548,11 +540,11 @@ export default function AdminPage() {
       {!loading && activeTab === 'users' && (
         <div className="space-y-6">
           {/* Search & Filter Bar */}
-          <div className="card p-4 flex flex-col sm:flex-row gap-3">
+          <Card variant="default" padding="sm" className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+              <Search size={15} className="absolute left-3 top-2.5 text-ink-muted" />
               <input
-                className="input-field pl-9 text-sm"
+                className="w-full rounded border border-border bg-surface pl-9 pr-3 py-1.5 text-xs sm:text-sm text-ink outline-none focus:border-accent"
                 placeholder="Search user by name or email..."
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
@@ -560,7 +552,7 @@ export default function AdminPage() {
               />
             </div>
             <select
-              className="input-field sm:w-44 text-sm"
+              className="rounded border border-border bg-surface px-3 py-1.5 sm:w-44 text-xs text-ink outline-none focus:border-accent"
               value={userRoleFilter}
               onChange={(e) => setUserRoleFilter(e.target.value)}
             >
@@ -571,59 +563,53 @@ export default function AdminPage() {
             </select>
             <button
               onClick={() => setRefreshKey((k) => k + 1)}
-              className="btn-secondary text-xs"
+              className="rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised"
               type="button"
             >
               Search
             </button>
-          </div>
+          </Card>
 
           {/* Users Table */}
-          <div className="card overflow-hidden">
+          <Card variant="default" padding="none" className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-surface-raised border-b border-border text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
                   <tr>
-                    <th className="py-3.5 px-4">User</th>
-                    <th className="py-3.5 px-4">Role</th>
-                    <th className="py-3.5 px-4">Joined</th>
-                    <th className="py-3.5 px-4">Status</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4">User</th>
+                    <th className="py-3 px-4">Role</th>
+                    <th className="py-3 px-4">Joined</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {users.map((u) => (
-                    <tr key={u._id} className="hover:bg-slate-50/50">
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{u.name}</div>
-                        <div className="text-xs text-slate-500">{u.email}</div>
+                    <tr key={u._id} className="hover:bg-surface-raised/40 transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-ink">{u.name}</div>
+                        <div className="text-[11px] text-ink-muted">{u.email}</div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${
-                          u.role === 'admin'
-                            ? 'bg-purple-100 text-purple-800'
-                            : u.role === 'mentor'
-                            ? 'bg-brand-100 text-brand-800'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}>
+                      <td className="py-3 px-4">
+                        <Badge variant="neutral" size="sm" className="capitalize">
                           {u.role}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="py-3.5 px-4 text-xs text-slate-500">
+                      <td className="py-3 px-4 text-xs text-ink-muted">
                         {new Date(u.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-bold ${
-                          u.isActive ? 'text-emerald-600' : 'text-rose-600'
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
+                          u.isActive ? 'text-success' : 'text-danger'
                         }`}>
-                          <span className={`h-2 w-2 rounded-full ${u.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <span className={`h-1.5 w-1.5 rounded-full ${u.isActive ? 'bg-success' : 'bg-danger'}`} />
                           {u.isActive ? 'Active' : 'Deactivated'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3 px-4 text-right">
                         <button
-                          className={`btn-secondary py-1 px-3 text-xs ${
-                            u.isActive ? 'hover:text-rose-600' : 'hover:text-emerald-600'
+                          className={`rounded border border-border bg-surface px-2.5 py-1 text-xs font-medium transition-colors ${
+                            u.isActive ? 'text-ink-muted hover:text-danger hover:border-danger/30' : 'text-ink-muted hover:text-success hover:border-success/30'
                           }`}
                           disabled={busyUserId === u._id}
                           onClick={() => handleToggleUser(u)}
@@ -636,7 +622,7 @@ export default function AdminPage() {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan="5" className="py-12 text-center text-slate-500">
+                      <td colSpan="5" className="py-12 text-center text-xs text-ink-muted">
                         No users found matching query.
                       </td>
                     </tr>
@@ -644,7 +630,7 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
@@ -652,17 +638,17 @@ export default function AdminPage() {
       {!loading && activeTab === 'bookings' && (
         <div className="space-y-6">
           {/* Status Filter */}
-          <div className="card p-4 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Filter By Status:</span>
-            <div className="flex flex-wrap gap-2">
+          <Card variant="default" padding="sm" className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Filter By Status:</span>
+            <div className="flex flex-wrap gap-1.5">
               {['', 'confirmed', 'completed', 'pending', 'cancelled', 'expired'].map((status) => (
                 <button
                   key={status}
                   onClick={() => setBookingStatusFilter(status)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-all ${
+                  className={`rounded px-2.5 py-1 text-xs font-semibold capitalize transition-all ${
                     bookingStatusFilter === status
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 hover:text-slate-900'
+                      ? 'bg-accent text-accent-text'
+                      : 'border border-border bg-surface text-ink-muted hover:text-ink hover:bg-surface-raised'
                   }`}
                   type="button"
                 >
@@ -670,60 +656,64 @@ export default function AdminPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
 
           {/* Bookings Table */}
-          <div className="card overflow-hidden">
+          <Card variant="default" padding="none" className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-surface-raised border-b border-border text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
                   <tr>
-                    <th className="py-3.5 px-4">Booking ID</th>
-                    <th className="py-3.5 px-4">Learner</th>
-                    <th className="py-3.5 px-4">Mentor</th>
-                    <th className="py-3.5 px-4">Scheduled Time</th>
-                    <th className="py-3.5 px-4">Price</th>
-                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3 px-4">Booking ID</th>
+                    <th className="py-3 px-4">Learner</th>
+                    <th className="py-3 px-4">Mentor</th>
+                    <th className="py-3 px-4">Scheduled Time</th>
+                    <th className="py-3 px-4">Price</th>
+                    <th className="py-3 px-4">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {bookings.map((b) => (
-                    <tr key={b._id} className="hover:bg-slate-50/50">
-                      <td className="py-3.5 px-4 font-mono text-xs text-slate-600">
+                    <tr key={b._id} className="hover:bg-surface-raised/40 transition-colors">
+                      <td className="py-3 px-4 font-mono text-[11px] text-ink-muted">
                         {String(b._id).slice(-8)}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{b.learnerId?.name || 'Learner'}</div>
-                        <div className="text-xs text-slate-500">{b.learnerId?.email}</div>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-ink">{b.learnerId?.name || 'Learner'}</div>
+                        <div className="text-[11px] text-ink-muted">{b.learnerId?.email}</div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{b.mentorId?.name || 'Mentor'}</div>
-                        <div className="text-xs text-slate-500">{b.mentorId?.email}</div>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-ink">{b.mentorId?.name || 'Mentor'}</div>
+                        <div className="text-[11px] text-ink-muted">{b.mentorId?.email}</div>
                       </td>
-                      <td className="py-3.5 px-4 text-xs text-slate-600">
+                      <td className="py-3 px-4 text-xs text-ink-muted">
                         {new Date(b.startTime).toLocaleString()}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
-                        Rs. {b.priceAtBooking}
+                      <td className="py-3 px-4 font-bold text-ink">
+                        ₹{b.priceAtBooking}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${
-                          b.status === 'confirmed'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : b.status === 'completed'
-                            ? 'bg-slate-100 text-slate-700'
-                            : b.status === 'pending'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}>
+                      <td className="py-3 px-4">
+                        <Badge
+                          variant={
+                            b.status === 'confirmed'
+                              ? 'success'
+                              : b.status === 'completed'
+                              ? 'neutral'
+                              : b.status === 'pending'
+                              ? 'warning'
+                              : 'danger'
+                          }
+                          size="sm"
+                          className="capitalize"
+                        >
                           {b.status}
-                        </span>
+                        </Badge>
                       </td>
                     </tr>
                   ))}
                   {bookings.length === 0 && (
                     <tr>
-                      <td colSpan="6" className="py-12 text-center text-slate-500">
+                      <td colSpan="6" className="py-12 text-center text-xs text-ink-muted">
                         No bookings found.
                       </td>
                     </tr>
@@ -731,7 +721,7 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
@@ -739,19 +729,19 @@ export default function AdminPage() {
       {!loading && activeTab === 'payments' && (
         <div className="space-y-6">
           {/* Status Filter */}
-          <div className="card p-4 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Filter By Status:</span>
-            <div className="flex flex-wrap gap-2">
+          <Card variant="default" padding="sm" className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Filter By Status:</span>
+            <div className="flex flex-wrap gap-1.5">
               {['', 'refund_due', 'paid', 'refunded', 'created', 'failed'].map((status) => (
                 <button
                   key={status}
                   onClick={() => setPaymentStatusFilter(status)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-all ${
+                  className={`rounded px-2.5 py-1 text-xs font-semibold capitalize transition-all ${
                     paymentStatusFilter === status
-                      ? 'bg-brand-600 text-white'
+                      ? 'bg-accent text-accent-text'
                       : status === 'refund_due'
-                      ? 'bg-amber-100 text-amber-800 font-extrabold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 hover:text-slate-900'
+                      ? 'border border-warning/50 bg-warning/15 text-warning font-bold'
+                      : 'border border-border bg-surface text-ink-muted hover:text-ink hover:bg-surface-raised'
                   }`}
                   type="button"
                 >
@@ -759,62 +749,65 @@ export default function AdminPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
 
           {/* Payments Table */}
-          <div className="card overflow-hidden">
+          <Card variant="default" padding="none" className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-surface-raised border-b border-border text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
                   <tr>
-                    <th className="py-3.5 px-4">Order / Reference</th>
-                    <th className="py-3.5 px-4">Learner</th>
-                    <th className="py-3.5 px-4">Amount</th>
-                    <th className="py-3.5 px-4">Fee Split</th>
-                    <th className="py-3.5 px-4">Status</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4">Order / Reference</th>
+                    <th className="py-3 px-4">Learner</th>
+                    <th className="py-3 px-4">Amount</th>
+                    <th className="py-3 px-4">Fee Split</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {payments.map((p) => (
-                    <tr key={p._id} className={p.status === 'refund_due' ? 'bg-amber-50/50 dark:bg-amber-950/20' : 'hover:bg-slate-50/50'}>
-                      <td className="py-3.5 px-4">
-                        <div className="font-mono text-xs text-slate-900 font-bold">{p.gatewayOrderId}</div>
-                        <div className="text-xs text-slate-500 capitalize">{p.gateway} gateway</div>
+                    <tr key={p._id} className={p.status === 'refund_due' ? 'bg-warning/5' : 'hover:bg-surface-raised/40 transition-colors'}>
+                      <td className="py-3 px-4">
+                        <div className="font-mono text-xs text-ink font-semibold">{p.gatewayOrderId}</div>
+                        <div className="text-[11px] text-ink-muted capitalize">{p.gateway} gateway</div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{p.learnerId?.name}</div>
-                        <div className="text-xs text-slate-500">{p.learnerId?.email}</div>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-ink">{p.learnerId?.name}</div>
+                        <div className="text-[11px] text-ink-muted">{p.learnerId?.email}</div>
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                      <td className="py-3 px-4 font-bold text-ink">
                         {formatRupees(p.amount)}
                       </td>
-                      <td className="py-3.5 px-4 text-xs text-slate-500">
-                        <div>Mentor: <strong className="text-slate-900">{formatRupees(p.mentorEarning)}</strong></div>
-                        <div>Fee: <strong className="text-brand-700">{formatRupees(p.platformFee)}</strong></div>
+                      <td className="py-3 px-4 text-xs text-ink-muted">
+                        <div>Mentor: <strong className="text-ink">{formatRupees(p.mentorEarning)}</strong></div>
+                        <div>Fee: <strong className="text-accent">{formatRupees(p.platformFee)}</strong></div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${
-                          p.status === 'refund_due'
-                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                            : p.status === 'paid'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : p.status === 'refunded'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}>
+                      <td className="py-3 px-4">
+                        <Badge
+                          variant={
+                            p.status === 'refund_due'
+                              ? 'warning'
+                              : p.status === 'paid'
+                              ? 'success'
+                              : p.status === 'refunded'
+                              ? 'neutral'
+                              : 'danger'
+                          }
+                          size="sm"
+                        >
                           {p.status}
-                        </span>
+                        </Badge>
                         {p.refundReference && (
-                          <div className="mt-1 font-mono text-[10px] text-slate-500">
+                          <div className="mt-1 font-mono text-[10px] text-ink-muted">
                             Ref: {p.refundReference}
                           </div>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3 px-4 text-right">
                         {p.status === 'refund_due' && (
                           <button
-                            className="btn-primary py-1 px-3 text-xs bg-amber-600 hover:bg-amber-700 text-white"
+                            className="rounded bg-warning px-2.5 py-1 text-xs font-semibold text-ink hover:opacity-90"
                             onClick={() => setSelectedRefundPayment(p)}
                             type="button"
                           >
@@ -826,7 +819,7 @@ export default function AdminPage() {
                   ))}
                   {payments.length === 0 && (
                     <tr>
-                      <td colSpan="6" className="py-12 text-center text-slate-500">
+                      <td colSpan="6" className="py-12 text-center text-xs text-ink-muted">
                         No payments found.
                       </td>
                     </tr>
@@ -834,35 +827,35 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
 
           {/* Refund Confirmation Modal */}
           {selectedRefundPayment && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="card w-full max-w-md p-6">
-                <h3 className="text-lg font-bold text-slate-900">Mark Refund Completed</h3>
-                <p className="mt-2 text-xs text-slate-600">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px] p-4">
+              <Card variant="raised" padding="lg" className="w-full max-w-md">
+                <h3 className="font-serif text-lg font-semibold text-ink">Mark Refund Completed</h3>
+                <p className="mt-1.5 text-xs text-ink-muted leading-relaxed">
                   Record the bank or gateway refund transaction reference for order{' '}
-                  <code className="font-mono font-bold text-slate-800">{selectedRefundPayment.gatewayOrderId}</code>{' '}
+                  <code className="font-mono font-bold text-ink">{selectedRefundPayment.gatewayOrderId}</code>{' '}
                   ({formatRupees(selectedRefundPayment.amount)}).
                 </p>
 
                 <div className="mt-4">
-                  <label htmlFor="refund-ref-input" className="block text-xs font-bold text-slate-700 mb-1">
+                  <label htmlFor="refund-ref-input" className="block text-xs font-semibold text-ink mb-1">
                     Gateway Refund Reference:
                   </label>
                   <input
                     id="refund-ref-input"
-                    className="input-field text-sm"
+                    className="w-full rounded border border-border bg-surface px-2.5 py-1.5 text-xs text-ink outline-none focus:border-accent"
                     placeholder="e.g., RFND_RZP_12345678"
                     value={refundReference}
                     onChange={(e) => setRefundReference(e.target.value)}
                   />
                 </div>
 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="mt-5 flex justify-end gap-2">
                   <button
-                    className="btn-secondary text-xs"
+                    className="rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised"
                     onClick={() => {
                       setSelectedRefundPayment(null);
                       setRefundReference('');
@@ -872,7 +865,7 @@ export default function AdminPage() {
                     Cancel
                   </button>
                   <button
-                    className="btn-primary text-xs"
+                    className="rounded bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-text hover:bg-accent-hover"
                     disabled={busyPaymentId === selectedRefundPayment._id || !refundReference.trim()}
                     onClick={handleMarkRefunded}
                     type="button"
@@ -880,7 +873,7 @@ export default function AdminPage() {
                     Confirm Refund
                   </button>
                 </div>
-              </div>
+              </Card>
             </div>
           )}
         </div>
@@ -890,35 +883,35 @@ export default function AdminPage() {
       {!loading && activeTab === 'payouts' && (
         <div className="space-y-8">
           {/* Mentor Payout Summary */}
-          <div className="card overflow-hidden">
-            <div className="p-4 border-b border-slate-200">
-              <h2 className="text-base font-bold text-slate-900">Mentor Balances Awaiting Payout</h2>
-              <p className="text-xs text-slate-500">Only completed sessions with cleared payments count towards earned balances.</p>
+          <Card variant="default" padding="none" className="overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <h2 className="font-serif text-base font-semibold text-ink">Mentor Balances Awaiting Payout</h2>
+              <p className="text-xs text-ink-muted mt-0.5">Only completed sessions with cleared payments count towards earned balances.</p>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-surface-raised border-b border-border text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
                   <tr>
-                    <th className="py-3.5 px-4">Mentor</th>
-                    <th className="py-3.5 px-4">Total Earned</th>
-                    <th className="py-3.5 px-4">Paid Out</th>
-                    <th className="py-3.5 px-4">Current Balance</th>
-                    <th className="py-3.5 px-4 text-right">Action</th>
+                    <th className="py-3 px-4">Mentor</th>
+                    <th className="py-3 px-4">Total Earned</th>
+                    <th className="py-3 px-4">Paid Out</th>
+                    <th className="py-3 px-4">Current Balance</th>
+                    <th className="py-3 px-4 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {payoutsSummary.map((m) => (
-                    <tr key={m.mentorId} className="hover:bg-slate-50/50">
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{m.mentorName}</div>
-                        <div className="text-xs text-slate-500">{m.mentorEmail}</div>
+                    <tr key={m.mentorId} className="hover:bg-surface-raised/40 transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-ink">{m.mentorName}</div>
+                        <div className="text-[11px] text-ink-muted">{m.mentorEmail}</div>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-700 font-medium">{formatRupees(m.earned)}</td>
-                      <td className="py-3.5 px-4 text-slate-500">{formatRupees(m.paidOut)}</td>
-                      <td className="py-3.5 px-4 font-extrabold text-emerald-600">{formatRupees(m.balance)}</td>
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3 px-4 text-ink-muted font-medium">{formatRupees(m.earned)}</td>
+                      <td className="py-3 px-4 text-ink-muted">{formatRupees(m.paidOut)}</td>
+                      <td className="py-3 px-4 font-bold text-success">{formatRupees(m.balance)}</td>
+                      <td className="py-3 px-4 text-right">
                         <button
-                          className="btn-primary py-1 px-3 text-xs"
+                          className="rounded bg-accent px-2.5 py-1 text-xs font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-40"
                           disabled={m.balance <= 0}
                           onClick={() => {
                             setSelectedMentorPayout(m);
@@ -933,7 +926,7 @@ export default function AdminPage() {
                   ))}
                   {payoutsSummary.length === 0 && (
                     <tr>
-                      <td colSpan="5" className="py-12 text-center text-slate-500">
+                      <td colSpan="5" className="py-12 text-center text-xs text-ink-muted">
                         No mentor records available.
                       </td>
                     </tr>
@@ -941,47 +934,47 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
 
           {/* Recent Payouts History */}
-          <div className="card overflow-hidden">
-            <div className="p-4 border-b border-slate-200">
-              <h2 className="text-base font-bold text-slate-900">Recorded Payouts Ledger</h2>
+          <Card variant="default" padding="none" className="overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <h2 className="font-serif text-base font-semibold text-ink">Recorded Payouts Ledger</h2>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-surface-raised border-b border-border text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
                   <tr>
-                    <th className="py-3.5 px-4">Date</th>
-                    <th className="py-3.5 px-4">Mentor</th>
-                    <th className="py-3.5 px-4">Amount</th>
-                    <th className="py-3.5 px-4">Reference</th>
-                    <th className="py-3.5 px-4">Recorded By</th>
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4">Mentor</th>
+                    <th className="py-3 px-4">Amount</th>
+                    <th className="py-3 px-4">Reference</th>
+                    <th className="py-3 px-4">Recorded By</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {recentPayouts.map((p) => (
-                    <tr key={p._id} className="hover:bg-slate-50/50">
-                      <td className="py-3.5 px-4 text-xs text-slate-500">
+                    <tr key={p._id} className="hover:bg-surface-raised/40 transition-colors">
+                      <td className="py-3 px-4 text-xs text-ink-muted">
                         {new Date(p.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                      <td className="py-3 px-4 font-semibold text-ink">
                         {p.mentorId?.name || 'Mentor'}
                       </td>
-                      <td className="py-3.5 px-4 font-extrabold text-emerald-600">
+                      <td className="py-3 px-4 font-bold text-success">
                         {formatRupees(p.amount)}
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-xs text-slate-600">
+                      <td className="py-3 px-4 font-mono text-[11px] text-ink-muted">
                         {p.reference}
                       </td>
-                      <td className="py-3.5 px-4 text-xs text-slate-500">
+                      <td className="py-3 px-4 text-xs text-ink-muted">
                         {p.recordedBy?.name || 'Admin'}
                       </td>
                     </tr>
                   ))}
                   {recentPayouts.length === 0 && (
                     <tr>
-                      <td colSpan="5" className="py-8 text-center text-slate-500">
+                      <td colSpan="5" className="py-8 text-center text-xs text-ink-muted">
                         No payouts recorded yet.
                       </td>
                     </tr>
@@ -989,40 +982,40 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
 
           {/* Record Payout Modal */}
           {selectedMentorPayout && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="card w-full max-w-md p-6">
-                <h3 className="text-lg font-bold text-slate-900">Record Mentor Payout</h3>
-                <p className="mt-1 text-xs text-slate-600">
-                  Transfer to <strong className="text-slate-900">{selectedMentorPayout.mentorName}</strong>. Available balance:{' '}
-                  <strong className="text-emerald-600">{formatRupees(selectedMentorPayout.balance)}</strong>.
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px] p-4">
+              <Card variant="raised" padding="lg" className="w-full max-w-md">
+                <h3 className="font-serif text-lg font-semibold text-ink">Record Mentor Payout</h3>
+                <p className="mt-1 text-xs text-ink-muted">
+                  Transfer to <strong className="text-ink">{selectedMentorPayout.mentorName}</strong>. Available balance:{' '}
+                  <strong className="text-success">{formatRupees(selectedMentorPayout.balance)}</strong>.
                 </p>
 
                 <div className="mt-4 space-y-3">
                   <div>
-                    <label htmlFor="payout-amount-input" className="block text-xs font-bold text-slate-700 mb-1">
+                    <label htmlFor="payout-amount-input" className="block text-xs font-semibold text-ink mb-1">
                       Amount (in Rupees):
                     </label>
                     <input
                       id="payout-amount-input"
                       type="number"
                       step="0.01"
-                      className="input-field text-sm"
+                      className="w-full rounded border border-border bg-surface px-2.5 py-1.5 text-xs text-ink outline-none focus:border-accent"
                       value={payoutAmountRupees}
                       onChange={(e) => setPayoutAmountRupees(e.target.value)}
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="payout-reference-input" className="block text-xs font-bold text-slate-700 mb-1">
+                    <label htmlFor="payout-reference-input" className="block text-xs font-semibold text-ink mb-1">
                       Transfer Reference (UPI / NEFT / IMPS ID):
                     </label>
                     <input
                       id="payout-reference-input"
-                      className="input-field text-sm"
+                      className="w-full rounded border border-border bg-surface px-2.5 py-1.5 text-xs text-ink outline-none focus:border-accent"
                       placeholder="e.g., UPI/2026/0987654321"
                       value={payoutReference}
                       onChange={(e) => setPayoutReference(e.target.value)}
@@ -1030,9 +1023,9 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="mt-5 flex justify-end gap-2">
                   <button
-                    className="btn-secondary text-xs"
+                    className="rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised"
                     onClick={() => {
                       setSelectedMentorPayout(null);
                       setPayoutAmountRupees('');
@@ -1043,7 +1036,7 @@ export default function AdminPage() {
                     Cancel
                   </button>
                   <button
-                    className="btn-primary text-xs"
+                    className="rounded bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-40"
                     disabled={busyPayout || !payoutAmountRupees || !payoutReference.trim()}
                     onClick={handleRecordPayout}
                     type="button"
@@ -1051,7 +1044,7 @@ export default function AdminPage() {
                     Record Payout
                   </button>
                 </div>
-              </div>
+              </Card>
             </div>
           )}
         </div>
@@ -1061,17 +1054,17 @@ export default function AdminPage() {
       {!loading && activeTab === 'complaints' && (
         <div className="space-y-6">
           {/* Status Filter */}
-          <div className="card p-4 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Filter By Status:</span>
-            <div className="flex gap-2">
+          <Card variant="default" padding="sm" className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Filter By Status:</span>
+            <div className="flex gap-1.5">
               {['open', 'resolved', ''].map((status) => (
                 <button
                   key={status}
                   onClick={() => setComplaintStatusFilter(status)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-all ${
+                  className={`rounded px-2.5 py-1 text-xs font-semibold capitalize transition-all ${
                     complaintStatusFilter === status
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 hover:text-slate-900'
+                      ? 'bg-accent text-accent-text'
+                      : 'border border-border bg-surface text-ink-muted hover:text-ink hover:bg-surface-raised'
                   }`}
                   type="button"
                 >
@@ -1079,30 +1072,28 @@ export default function AdminPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
 
           {/* Complaints List */}
           <div className="space-y-4">
             {complaints.map((c) => (
-              <article key={c._id} className="card p-5">
+              <Card key={c._id} variant="default" padding="md">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold uppercase ${
-                        c.status === 'open' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                      }`}>
+                      <Badge variant={c.status === 'open' ? 'warning' : 'success'} size="sm">
                         {c.status}
-                      </span>
-                      <span className="text-xs text-slate-500">
+                      </Badge>
+                      <span className="text-[11px] text-ink-muted">
                         Submitted {new Date(c.createdAt).toLocaleString()}
                       </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-slate-900 mt-2">{c.subject}</h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Filed by: <strong className="text-slate-800">{c.userId?.name}</strong> ({c.userId?.email}, {c.userId?.role})
+                    <h3 className="font-serif text-base font-semibold text-ink mt-2">{c.subject}</h3>
+                    <p className="mt-1 text-xs text-ink-muted">
+                      Filed by: <strong className="text-ink">{c.userId?.name}</strong> ({c.userId?.email}, {c.userId?.role})
                     </p>
-                    <p className="mt-3 text-sm text-slate-700 leading-relaxed bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+                    <p className="mt-2.5 text-xs sm:text-sm text-ink-muted leading-relaxed bg-surface-raised/40 p-3 rounded border border-border">
                       {c.description}
                     </p>
                   </div>
@@ -1110,56 +1101,56 @@ export default function AdminPage() {
                   <div className="shrink-0">
                     {c.status === 'open' ? (
                       <button
-                        className="btn-primary py-1.5 px-4 text-xs"
+                        className="rounded bg-accent py-1.5 px-3 text-xs font-semibold text-accent-text hover:bg-accent-hover transition-colors"
                         onClick={() => setSelectedComplaint(c)}
                         type="button"
                       >
                         Resolve Issue
                       </button>
                     ) : (
-                      <div className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                        <CheckCircle2 size={14} /> Resolved
+                      <div className="text-xs text-success font-semibold flex items-center gap-1">
+                        <CheckCircle2 size={13} /> Resolved
                       </div>
                     )}
                   </div>
                 </div>
 
                 {c.resolutionNote && (
-                  <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-600">
+                  <div className="mt-3.5 pt-3 border-t border-border text-xs text-ink-muted">
                     <strong>Resolution note:</strong> {c.resolutionNote}
                     {c.resolvedAt && (
-                      <span className="text-slate-400 block mt-0.5">
+                      <span className="text-ink-muted/70 block mt-0.5">
                         Resolved on {new Date(c.resolvedAt).toLocaleString()}
                       </span>
                     )}
                   </div>
                 )}
-              </article>
+              </Card>
             ))}
 
             {complaints.length === 0 && (
-              <div className="card p-12 text-center text-slate-500">
+              <Card variant="flat" padding="lg" className="text-center text-xs text-ink-muted">
                 No complaints recorded in this queue.
-              </div>
+              </Card>
             )}
           </div>
 
           {/* Resolve Complaint Modal */}
           {selectedComplaint && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="card w-full max-w-md p-6">
-                <h3 className="text-lg font-bold text-slate-900">Resolve Complaint</h3>
-                <p className="mt-1 text-xs text-slate-600">
-                  Topic: <strong className="text-slate-900">{selectedComplaint.subject}</strong>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px] p-4">
+              <Card variant="raised" padding="lg" className="w-full max-w-md">
+                <h3 className="font-serif text-lg font-semibold text-ink">Resolve Complaint</h3>
+                <p className="mt-1 text-xs text-ink-muted">
+                  Topic: <strong className="text-ink">{selectedComplaint.subject}</strong>
                 </p>
 
                 <div className="mt-4">
-                  <label htmlFor="complaint-note-input" className="block text-xs font-bold text-slate-700 mb-1">
+                  <label htmlFor="complaint-note-input" className="block text-xs font-semibold text-ink mb-1">
                     Resolution Action / Notes:
                   </label>
                   <textarea
                     id="complaint-note-input"
-                    className="input-field text-sm"
+                    className="w-full rounded border border-border bg-surface px-2.5 py-1.5 text-xs text-ink outline-none focus:border-accent"
                     rows="3"
                     placeholder="Describe how the complaint was addressed (e.g. issued credit, contacted mentor)..."
                     value={resolutionNote}
@@ -1167,9 +1158,9 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="mt-5 flex justify-end gap-2">
                   <button
-                    className="btn-secondary text-xs"
+                    className="rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised"
                     onClick={() => {
                       setSelectedComplaint(null);
                       setResolutionNote('');
@@ -1179,7 +1170,7 @@ export default function AdminPage() {
                     Cancel
                   </button>
                   <button
-                    className="btn-primary text-xs"
+                    className="rounded bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-40"
                     disabled={busyComplaintId === selectedComplaint._id || !resolutionNote.trim()}
                     onClick={handleResolveComplaint}
                     type="button"
@@ -1187,7 +1178,7 @@ export default function AdminPage() {
                     Mark Resolved
                   </button>
                 </div>
-              </div>
+              </Card>
             </div>
           )}
         </div>

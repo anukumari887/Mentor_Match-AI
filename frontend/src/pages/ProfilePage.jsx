@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { CheckCircle2, Clock, Plus, Save, Trash2, UserRound, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Plus, Save, Trash2, UserRound, AlertCircle } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -122,39 +124,38 @@ export default function ProfilePage() {
 
   if (authLoading || loading) {
     return (
-      <div className="page-wrap py-16 text-center text-sm text-slate-600" role="status">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+      <div className="page-wrap py-16 text-center text-xs text-ink-muted" role="status">
         <p className="mt-3">Loading your profile...</p>
       </div>
     );
   }
 
   return (
-    <section className="page-wrap flex-1 py-10 sm:py-14">
+    <section className="page-wrap flex-1 py-10 sm:py-14 bg-bg text-ink transition-colors">
       {/* Header */}
-      <div className="mb-8 border-b border-slate-200 pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div className="mb-8 border-b border-border pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-brand-700">Account settings</p>
-          <h1 className="mt-1.5 text-3xl font-extrabold text-slate-900 sm:text-4xl">Profile and availability</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600">
-            <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800">
-              <UserRound size={14} className="text-brand-600" /> {user.name}
+          <p className="text-xs font-semibold tracking-wider uppercase text-accent">Account settings</p>
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink">Profile and availability</h1>
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-muted">
+            <span className="inline-flex items-center gap-1.5 font-medium text-ink">
+              <UserRound size={13} className="text-accent" /> {user?.name}
             </span>
-            <span>{user.email}</span>
-            <span className="rounded-full bg-brand-50 border border-brand-200 px-2 py-0.5 font-bold capitalize text-brand-800">
-              {user.role}
-            </span>
+            <span>{user?.email}</span>
+            <Badge variant="neutral" size="sm" className="capitalize">
+              {user?.role}
+            </Badge>
           </div>
         </div>
       </div>
 
       {error && (
-        <div role="alert" className="notice-error mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg p-4 text-sm font-medium">
+        <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded border border-danger/40 bg-danger/10 p-4 text-xs sm:text-sm text-danger font-medium">
           <span className="flex items-center gap-2">
-            <AlertCircle size={16} /> {error}
+            <AlertCircle size={15} /> {error}
           </span>
           {!form && (
-            <button className="font-bold underline underline-offset-2 hover:opacity-80" onClick={() => setRetryCount((count) => count + 1)} type="button">
+            <button className="font-bold underline hover:opacity-80" onClick={() => setRetryCount((count) => count + 1)} type="button">
               Try again
             </button>
           )}
@@ -162,27 +163,27 @@ export default function ProfilePage() {
       )}
 
       {saved && (
-        <p role="status" className="mb-6 rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-200 p-4 text-sm font-semibold text-emerald-900 flex items-center gap-2">
-          <CheckCircle2 size={16} className="text-emerald-700 dark:text-emerald-400" /> Your changes have been saved.
+        <p role="status" className="mb-6 rounded border border-success/40 bg-success/10 p-3.5 text-xs sm:text-sm font-semibold text-ink flex items-center gap-2">
+          <CheckCircle2 size={16} className="text-success" /> Your changes have been saved.
         </p>
       )}
 
       {form && (
         <form className="max-w-3xl space-y-8" onSubmit={handleSubmit}>
-          {user.role === 'learner' ? (
-            <div className="card p-6 sm:p-8 space-y-6">
+          {user?.role === 'learner' ? (
+            <Card variant="raised" padding="lg" className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">What are you working toward?</h2>
-                <p className="mt-1 text-xs text-slate-600">
+                <h2 className="font-serif text-lg font-semibold text-ink">What are you working toward?</h2>
+                <p className="mt-1 text-xs text-ink-muted">
                   This guides our matchmaking algorithm to rank the most relevant mentors for you.
                 </p>
               </div>
 
               <div>
-                <label className="form-label" htmlFor="learner-goals">Career goals</label>
+                <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="learner-goals">Career goals</label>
                 <textarea
                   id="learner-goals"
-                  className="form-input mt-1.5 min-h-24 resize-y"
+                  className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent min-h-24 resize-y"
                   maxLength={500}
                   name="goals"
                   onChange={setField}
@@ -193,38 +194,38 @@ export default function ProfilePage() {
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <label className="form-label" htmlFor="known-skills">Skills you know</label>
+                  <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="known-skills">Skills you know</label>
                   <textarea
                     id="known-skills"
-                    className="form-input mt-1.5 min-h-20 resize-y"
+                    className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent min-h-20 resize-y"
                     name="knownSkillsText"
                     onChange={setField}
                     placeholder="JavaScript, React, SQL"
                     value={form.knownSkillsText ?? (form.knownSkills || []).join(', ')}
                   />
-                  <span className="mt-1 block text-[11px] text-slate-500">Separate with commas</span>
+                  <span className="mt-1 block text-[11px] text-ink-muted">Separate with commas</span>
                 </div>
 
                 <div>
-                  <label className="form-label" htmlFor="wanted-skills">Skills you want to learn</label>
+                  <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="wanted-skills">Skills you want to learn</label>
                   <textarea
                     id="wanted-skills"
-                    className="form-input mt-1.5 min-h-20 resize-y"
+                    className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent min-h-20 resize-y"
                     name="wantedSkillsText"
                     onChange={setField}
                     placeholder="System design, Kubernetes, Go"
                     value={form.wantedSkillsText ?? (form.wantedSkills || []).join(', ')}
                   />
-                  <span className="mt-1 block text-[11px] text-slate-500">Separate with commas</span>
+                  <span className="mt-1 block text-[11px] text-ink-muted">Separate with commas</span>
                 </div>
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <label className="form-label" htmlFor="learner-level">Current level</label>
+                  <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="learner-level">Current level</label>
                   <select
                     id="learner-level"
-                    className="form-input mt-1.5"
+                    className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent"
                     name="level"
                     onChange={setField}
                     value={form.level || 'beginner'}
@@ -236,10 +237,10 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="form-label" htmlFor="learner-budget">Budget per hour (INR)</label>
+                  <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="learner-budget">Budget per hour (INR)</label>
                   <input
                     id="learner-budget"
-                    className="form-input mt-1.5"
+                    className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent"
                     min="0"
                     name="budgetPerHour"
                     onChange={setField}
@@ -248,21 +249,21 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-            </div>
+            </Card>
           ) : (
-            <div className="card p-6 sm:p-8 space-y-6">
+            <Card variant="raised" padding="lg" className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Your mentoring profile</h2>
-                <p className="mt-1 text-xs text-slate-600">
+                <h2 className="font-serif text-lg font-semibold text-ink">Your mentoring profile</h2>
+                <p className="mt-1 text-xs text-ink-muted">
                   Share concise, specific context so learners understand how your experience can help them.
                 </p>
               </div>
 
               <div>
-                <label className="form-label" htmlFor="mentor-headline">Headline</label>
+                <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="mentor-headline">Headline</label>
                 <input
                   id="mentor-headline"
-                  className="form-input mt-1.5"
+                  className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent"
                   maxLength={120}
                   name="headline"
                   onChange={setField}
@@ -272,10 +273,10 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="form-label" htmlFor="mentor-bio">About your experience</label>
+                <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="mentor-bio">About your experience</label>
                 <textarea
                   id="mentor-bio"
-                  className="form-input mt-1.5 min-h-28 resize-y"
+                  className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent min-h-28 resize-y"
                   maxLength={1500}
                   name="bio"
                   onChange={setField}
@@ -286,10 +287,10 @@ export default function ProfilePage() {
 
               <div className="grid gap-5 sm:grid-cols-3">
                 <div className="sm:col-span-1">
-                  <label className="form-label" htmlFor="mentor-skills">Skills</label>
+                  <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="mentor-skills">Skills</label>
                   <input
                     id="mentor-skills"
-                    className="form-input mt-1.5"
+                    className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent"
                     name="skillsText"
                     onChange={setField}
                     placeholder="React, leadership"
@@ -297,10 +298,10 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label" htmlFor="mentor-exp">Years of experience</label>
+                  <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="mentor-exp">Years of experience</label>
                   <input
                     id="mentor-exp"
-                    className="form-input mt-1.5"
+                    className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent"
                     max="60"
                     min="0"
                     name="experienceYears"
@@ -310,10 +311,10 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label" htmlFor="mentor-price">Price per hour (INR)</label>
+                  <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="mentor-price">Price per hour (INR)</label>
                   <input
                     id="mentor-price"
-                    className="form-input mt-1.5"
+                    className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent"
                     max="20000"
                     min="100"
                     name="pricePerHour"
@@ -325,10 +326,10 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="form-label" htmlFor="mentor-tz">Time zone</label>
+                <label className="block text-xs font-semibold text-ink mb-1.5" htmlFor="mentor-tz">Time zone</label>
                 <input
                   id="mentor-tz"
-                  className="form-input mt-1.5"
+                  className="w-full rounded border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-ink outline-none focus:border-accent"
                   name="timezone"
                   onChange={setField}
                   value={form.timezone || 'Asia/Kolkata'}
@@ -336,34 +337,34 @@ export default function ProfilePage() {
               </div>
 
               {form.approvalStatus && (
-                <div className="rounded-lg bg-surface-muted/60 p-3 text-xs text-slate-600 flex items-center justify-between">
+                <div className="rounded border border-border bg-surface-raised p-3 text-xs text-ink-muted flex items-center justify-between">
                   <span>Profile approval status:</span>
-                  <span className="font-bold capitalize text-slate-900">{form.approvalStatus}</span>
+                  <Badge variant="accent" size="sm" className="capitalize">{form.approvalStatus}</Badge>
                 </div>
               )}
-            </div>
+            </Card>
           )}
 
           {/* Weekly Availability Card */}
-          <div className="card p-6 sm:p-8">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+          <Card variant="raised" padding="lg">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Weekly availability</h2>
-                <p className="mt-1 text-xs text-slate-600">
+                <h2 className="font-serif text-lg font-semibold text-ink">Weekly availability</h2>
+                <p className="mt-1 text-xs text-ink-muted">
                   Recurring windows when you are open for 1-hour sessions.
                 </p>
               </div>
               <button
-                className="secondary-button text-xs py-2 px-3.5"
+                className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised transition-colors"
                 onClick={() => setForm((current) => ({ ...current, availability: [...(current.availability || []), defaultWindow()] }))}
                 type="button"
               >
-                <Plus size={15} /> Add time
+                <Plus size={14} /> Add time
               </button>
             </div>
 
             {(form.availability || []).length === 0 && (
-              <p className="mt-5 rounded-lg bg-surface-muted/50 p-6 text-center text-xs text-slate-500">
+              <p className="mt-5 rounded border border-border bg-surface-raised/40 p-6 text-center text-xs text-ink-muted">
                 No weekly times added yet. Click "Add time" above to add recurring hours.
               </p>
             )}
@@ -372,12 +373,12 @@ export default function ProfilePage() {
               {(form.availability || []).map((window, index) => (
                 <div
                   key={`${index}-${window.dayOfWeek}`}
-                  className="grid items-end gap-3 rounded-lg border border-slate-200 bg-surface-muted/30 p-3 sm:grid-cols-[1.3fr_1fr_1fr_auto]"
+                  className="grid items-end gap-3 rounded border border-border bg-surface-raised/30 p-3 sm:grid-cols-[1.3fr_1fr_1fr_auto]"
                 >
                   <div>
-                    <label className="form-label text-xs">Day</label>
+                    <label className="block text-xs font-semibold text-ink mb-1">Day</label>
                     <select
-                      className="form-input mt-1 text-xs"
+                      className="w-full rounded border border-border bg-surface px-2.5 py-1.5 text-xs text-ink outline-none focus:border-accent"
                       onChange={(event) => setWindow(index, 'dayOfWeek', event.target.value)}
                       value={window.dayOfWeek}
                     >
@@ -388,9 +389,9 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <label className="form-label text-xs">From</label>
+                    <label className="block text-xs font-semibold text-ink mb-1">From</label>
                     <input
-                      className="form-input mt-1 text-xs font-mono"
+                      className="w-full rounded border border-border bg-surface px-2.5 py-1.5 text-xs font-mono text-ink outline-none focus:border-accent"
                       onChange={(event) => setWindow(index, 'startTime', event.target.value)}
                       type="time"
                       value={window.startTime}
@@ -398,9 +399,9 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <label className="form-label text-xs">Until</label>
+                    <label className="block text-xs font-semibold text-ink mb-1">Until</label>
                     <input
-                      className="form-input mt-1 text-xs font-mono"
+                      className="w-full rounded border border-border bg-surface px-2.5 py-1.5 text-xs font-mono text-ink outline-none focus:border-accent"
                       onChange={(event) => setWindow(index, 'endTime', event.target.value)}
                       type="time"
                       value={window.endTime}
@@ -409,20 +410,24 @@ export default function ProfilePage() {
 
                   <button
                     aria-label={`Remove ${DAYS[window.dayOfWeek]} availability`}
-                    className="icon-button text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-slate-200 h-10 w-10 shrink-0"
+                    className="flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-ink-muted hover:text-danger hover:border-danger/30 transition-colors"
                     onClick={() => setForm((current) => ({ ...current, availability: current.availability.filter((_, row) => row !== index) }))}
                     type="button"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={15} />
                   </button>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
           <div className="flex items-center justify-end">
-            <button className="primary-button text-sm px-6 py-2.5" disabled={saving} type="submit">
-              <Save size={16} /> {saving ? 'Saving...' : 'Save profile'}
+            <button
+              className="inline-flex items-center gap-1.5 rounded bg-accent px-5 py-2 text-xs sm:text-sm font-semibold text-accent-text hover:bg-accent-hover transition-colors shadow-sm"
+              disabled={saving}
+              type="submit"
+            >
+              <Save size={15} /> {saving ? 'Saving...' : 'Save profile'}
             </button>
           </div>
         </form>

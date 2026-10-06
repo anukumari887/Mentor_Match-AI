@@ -8,24 +8,26 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Moon,
-  Sun,
-  SunMoon,
   User,
   WalletCards,
   X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import ThemeMenu from './ThemeMenu';
 
 export default function Navbar() {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutError, setLogoutError] = useState('');
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (path.startsWith('/#')) {
+      return location.pathname === '/' && location.hash === path.substring(1);
+    }
+    return location.pathname === path;
+  };
+
   const closeMenu = () => setMenuOpen(false);
 
   const handleLogout = async () => {
@@ -39,101 +41,144 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-surface/95 backdrop-blur-md transition-colors duration-200">
+    <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur-sm transition-colors">
       <a className="skip-link" href="#main-content">Skip to content</a>
-      <div className="page-wrap flex min-h-16 items-center justify-between gap-4 py-2.5">
+      <div className="page-wrap flex min-h-16 items-center justify-between gap-3 py-2">
+        {/* Left: Brand + Desktop Links */}
         <div className="flex items-center gap-6">
-          <Link aria-label="Mentor-Match home" className="flex shrink-0 items-center gap-2.5 group" onClick={closeMenu} to="/">
-            <span className="brand-mark flex h-8 w-8 items-center justify-center rounded-lg text-sm font-extrabold shadow-sm transition-transform group-hover:scale-105">
+          <Link
+            aria-label="Mentor-Match home"
+            className="flex shrink-0 items-center gap-2.5 group"
+            onClick={closeMenu}
+            to="/"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded bg-ink text-surface text-sm font-bold font-serif shadow-sm">
               M
             </span>
-            <span className="text-base font-extrabold tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors">
+            <span className="font-serif text-base font-bold tracking-tight text-ink group-hover:text-accent transition-colors">
               Mentor-Match
             </span>
           </Link>
 
           {/* Desktop Primary Nav Links */}
           <nav aria-label="Main navigation" className="hidden lg:flex lg:items-center lg:gap-1">
-            <Link className={`nav-link ${isActive('/') ? 'nav-link-active' : ''}`} to="/#how-it-works">How it works</Link>
+            <Link
+              className={`whitespace-nowrap px-2.5 py-1.5 text-xs font-medium rounded transition-colors ${
+                isActive('/') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+              }`}
+              to="/#how-it-works"
+            >
+              How it works
+            </Link>
+
             {user?.role === 'admin' && (
-              <Link className={`nav-link inline-flex items-center gap-1.5 ${isActive('/admin') || isActive('/admin/mentors') ? 'nav-link-active' : ''}`} to="/admin">
-                <ClipboardCheck size={16} /> Admin portal
+              <Link
+                className={`whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded transition-colors ${
+                  isActive('/admin') || isActive('/admin/mentors')
+                    ? 'text-accent font-semibold bg-accent/10'
+                    : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                }`}
+                to="/admin"
+              >
+                <ClipboardCheck size={14} /> Admin portal
               </Link>
             )}
+
             {user?.role === 'learner' && (
-              <Link className={`nav-link inline-flex items-center gap-1.5 ${isActive('/dashboard') ? 'nav-link-active' : ''}`} to="/dashboard">
-                <LayoutDashboard size={16} /> Dashboard
+              <Link
+                className={`whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded transition-colors ${
+                  isActive('/dashboard') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                }`}
+                to="/dashboard"
+              >
+                <LayoutDashboard size={14} /> Dashboard
               </Link>
             )}
+
             {user && user.role !== 'admin' && (
-              <Link className={`nav-link inline-flex items-center gap-1.5 ${isActive('/mentors') ? 'nav-link-active' : ''}`} to="/mentors">
-                <Compass size={16} /> Browse mentors
+              <Link
+                className={`whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded transition-colors ${
+                  isActive('/mentors') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                }`}
+                to="/mentors"
+              >
+                <Compass size={14} /> Browse mentors
               </Link>
             )}
-            <Link className={`nav-link inline-flex items-center gap-1.5 ${isActive('/status') ? 'nav-link-active' : ''}`} to="/status">
-              <Activity size={16} /> System status
+
+            <Link
+              className={`whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded transition-colors ${
+                isActive('/status') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+              }`}
+              to="/status"
+            >
+              <Activity size={14} /> System status
             </Link>
           </nav>
         </div>
 
-        {/* Right Section: Theme Toggle + Auth */}
-        <div className="hidden lg:flex lg:items-center lg:gap-3">
-          <label className="theme-select-wrap cursor-pointer transition-colors hover:border-brand-500/50" title="Choose appearance">
-            <span className="sr-only">Theme</span>
-            {theme === 'light' ? (
-              <Sun size={15} className="text-amber-500" aria-hidden="true" />
-            ) : theme === 'dark' ? (
-              <Moon size={15} className="text-brand-400" aria-hidden="true" />
-            ) : (
-              <SunMoon size={15} className="text-slate-500" aria-hidden="true" />
-            )}
-            <select
-              aria-label="Theme"
-              className="theme-select focus:outline-none"
-              onChange={(event) => setTheme(event.target.value)}
-              value={theme}
-            >
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </label>
+        {/* Right Section: Theme Menu + User Navigation */}
+        <div className="hidden lg:flex lg:items-center lg:gap-2.5">
+          <ThemeMenu />
 
-          <span className="h-5 w-px bg-slate-200" aria-hidden="true" />
+          <span className="h-4 w-px bg-border" aria-hidden="true" />
 
           {user ? (
-            <div className="flex items-center gap-2">
-              <span className="hidden xl:inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 capitalize">
+            <div className="flex items-center gap-1.5">
+              <span className="hidden xl:inline-flex items-center text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-surface-raised text-ink-muted border border-border">
                 {user.role}
               </span>
               {user.role !== 'admin' && (
-                <Link className={`nav-link ${isActive('/profile') ? 'nav-link-active' : ''}`} to="/profile">
+                <Link
+                  className={`whitespace-nowrap px-2.5 py-1.5 text-xs font-medium rounded transition-colors ${
+                    isActive('/profile') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                  }`}
+                  to="/profile"
+                >
                   My profile
                 </Link>
               )}
               {user.role !== 'admin' && (
-                <Link className={`nav-link ${isActive('/sessions') ? 'nav-link-active' : ''}`} to="/sessions">
+                <Link
+                  className={`whitespace-nowrap px-2.5 py-1.5 text-xs font-medium rounded transition-colors ${
+                    isActive('/sessions') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                  }`}
+                  to="/sessions"
+                >
                   My sessions
                 </Link>
               )}
               {user.role === 'mentor' && (
-                <Link className={`nav-link inline-flex items-center gap-1.5 ${isActive('/earnings') ? 'nav-link-active' : ''}`} to="/earnings">
-                  <WalletCards size={16} /> Earnings
+                <Link
+                  className={`whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded transition-colors ${
+                    isActive('/earnings') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                  }`}
+                  to="/earnings"
+                >
+                  <WalletCards size={14} /> Earnings
                 </Link>
               )}
               <button
-                className="nav-link inline-flex items-center gap-1.5 text-slate-600 hover:text-rose-600"
+                className="whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded text-ink-muted hover:text-danger hover:bg-danger/10 transition-colors"
                 onClick={handleLogout}
                 type="button"
               >
-                <LogOut size={16} /> Sign out
+                <LogOut size={14} /> Sign out
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2.5">
-              <Link className="nav-link" to="/login">Sign in</Link>
-              <Link className="primary-button text-xs py-2 px-3.5" to="/register">
-                Get started <ArrowRight size={14} />
+            <div className="flex items-center gap-2">
+              <Link
+                className="whitespace-nowrap px-3 py-1.5 text-xs font-medium rounded text-ink-muted hover:text-ink hover:bg-surface-raised transition-colors"
+                to="/login"
+              >
+                Sign in
+              </Link>
+              <Link
+                className="whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded bg-accent text-accent-text hover:bg-accent-hover transition-colors shadow-sm"
+                to="/register"
+              >
+                Get started <ArrowRight size={13} />
               </Link>
             </div>
           )}
@@ -141,35 +186,16 @@ export default function Navbar() {
 
         {/* Mobile controls */}
         <div className="flex items-center gap-2 lg:hidden">
-          <label className="theme-select-wrap p-1.5" title="Choose appearance">
-            <span className="sr-only">Theme</span>
-            {theme === 'light' ? (
-              <Sun size={15} className="text-amber-500" aria-hidden="true" />
-            ) : theme === 'dark' ? (
-              <Moon size={15} className="text-brand-400" aria-hidden="true" />
-            ) : (
-              <SunMoon size={15} className="text-slate-500" aria-hidden="true" />
-            )}
-            <select
-              aria-label="Theme"
-              className="theme-select text-xs w-16"
-              onChange={(event) => setTheme(event.target.value)}
-              value={theme}
-            >
-              <option value="system">Auto</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </label>
+          <ThemeMenu />
 
           <button
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
-            className="icon-button"
+            className="flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-ink hover:bg-surface-raised transition-colors"
             onClick={() => setMenuOpen(!menuOpen)}
             type="button"
           >
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            {menuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
 
@@ -177,70 +203,136 @@ export default function Navbar() {
         {menuOpen && (
           <nav
             aria-label="Main navigation"
-            className="absolute left-0 right-0 top-full flex flex-col gap-1 border-b border-slate-200 bg-surface px-5 py-5 shadow-lg lg:hidden"
+            className="absolute left-0 right-0 top-full flex flex-col gap-1 border-b border-border bg-surface px-5 py-4 shadow-md lg:hidden"
           >
             {user && (
-              <div className="mb-3 pb-3 border-b border-slate-200 flex items-center justify-between">
+              <div className="mb-2 pb-3 border-b border-border flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold text-slate-900">{user.name}</p>
-                  <p className="text-xs text-slate-500">{user.email}</p>
+                  <p className="text-xs font-bold text-ink">{user.name}</p>
+                  <p className="text-[11px] text-ink-muted">{user.email}</p>
                 </div>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 capitalize">
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-surface-raised text-ink-muted border border-border">
                   {user.role}
                 </span>
               </div>
             )}
 
-            <Link className={`nav-link ${isActive('/') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/#how-it-works">How it works</Link>
+            <Link
+              className={`whitespace-nowrap px-3 py-2 text-xs font-medium rounded ${
+                isActive('/') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+              }`}
+              onClick={closeMenu}
+              to="/#how-it-works"
+            >
+              How it works
+            </Link>
+
             {user?.role === 'admin' && (
-              <Link className={`nav-link inline-flex items-center gap-2 ${isActive('/admin') || isActive('/admin/mentors') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/admin">
-                <ClipboardCheck size={16} /> Admin portal
+              <Link
+                className={`whitespace-nowrap inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded ${
+                  isActive('/admin') || isActive('/admin/mentors')
+                    ? 'text-accent font-semibold bg-accent/10'
+                    : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                }`}
+                onClick={closeMenu}
+                to="/admin"
+              >
+                <ClipboardCheck size={14} /> Admin portal
               </Link>
             )}
+
             {user?.role === 'learner' && (
-              <Link className={`nav-link inline-flex items-center gap-2 ${isActive('/dashboard') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/dashboard">
-                <LayoutDashboard size={16} /> Dashboard
+              <Link
+                className={`whitespace-nowrap inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded ${
+                  isActive('/dashboard') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                }`}
+                onClick={closeMenu}
+                to="/dashboard"
+              >
+                <LayoutDashboard size={14} /> Dashboard
               </Link>
             )}
+
             {user && user.role !== 'admin' && (
-              <Link className={`nav-link inline-flex items-center gap-2 ${isActive('/mentors') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/mentors">
-                <Compass size={16} /> Browse mentors
+              <Link
+                className={`whitespace-nowrap inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded ${
+                  isActive('/mentors') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                }`}
+                onClick={closeMenu}
+                to="/mentors"
+              >
+                <Compass size={14} /> Browse mentors
               </Link>
             )}
-            <Link className={`nav-link inline-flex items-center gap-2 ${isActive('/status') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/status">
-              <Activity size={16} /> System status
+
+            <Link
+              className={`whitespace-nowrap inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded ${
+                isActive('/status') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+              }`}
+              onClick={closeMenu}
+              to="/status"
+            >
+              <Activity size={14} /> System status
             </Link>
 
             {user ? (
-              <div className="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-1">
+              <div className="mt-2 pt-2 border-t border-border flex flex-col gap-1">
                 {user.role !== 'admin' && (
-                  <Link className={`nav-link ${isActive('/profile') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/profile">
+                  <Link
+                    className={`whitespace-nowrap px-3 py-2 text-xs font-medium rounded ${
+                      isActive('/profile') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                    }`}
+                    onClick={closeMenu}
+                    to="/profile"
+                  >
                     My profile
                   </Link>
                 )}
                 {user.role !== 'admin' && (
-                  <Link className={`nav-link ${isActive('/sessions') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/sessions">
+                  <Link
+                    className={`whitespace-nowrap px-3 py-2 text-xs font-medium rounded ${
+                      isActive('/sessions') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                    }`}
+                    onClick={closeMenu}
+                    to="/sessions"
+                  >
                     My sessions
                   </Link>
                 )}
                 {user.role === 'mentor' && (
-                  <Link className={`nav-link inline-flex items-center gap-2 ${isActive('/earnings') ? 'nav-link-active' : ''}`} onClick={closeMenu} to="/earnings">
-                    <WalletCards size={16} /> Earnings
+                  <Link
+                    className={`whitespace-nowrap inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded ${
+                      isActive('/earnings') ? 'text-accent font-semibold bg-accent/10' : 'text-ink-muted hover:text-ink hover:bg-surface-raised'
+                    }`}
+                    onClick={closeMenu}
+                    to="/earnings"
+                  >
+                    <WalletCards size={14} /> Earnings
                   </Link>
                 )}
                 <button
-                  className="nav-link inline-flex items-center gap-2 text-left text-rose-600 hover:text-rose-700"
+                  className="whitespace-nowrap inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded text-left text-danger hover:bg-danger/10 transition-colors"
                   onClick={handleLogout}
                   type="button"
                 >
-                  <LogOut size={16} /> Sign out
+                  <LogOut size={14} /> Sign out
                 </button>
               </div>
             ) : (
-              <div className="mt-3 pt-3 border-t border-slate-200 flex flex-col gap-2">
-                <Link className="nav-link text-center justify-center" onClick={closeMenu} to="/login">Sign in</Link>
-                <Link className="primary-button text-center justify-center" onClick={closeMenu} to="/register">
-                  Get started <ArrowRight size={15} />
+              <div className="mt-3 pt-3 border-t border-border flex flex-col gap-2">
+                <Link
+                  className="whitespace-nowrap px-3 py-2 text-xs font-medium text-center rounded border border-border text-ink hover:bg-surface-raised"
+                  onClick={closeMenu}
+                  to="/login"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  className="whitespace-nowrap px-3 py-2 text-xs font-semibold text-center rounded bg-accent text-accent-text hover:bg-accent-hover flex items-center justify-center gap-1.5"
+                  onClick={closeMenu}
+                  to="/register"
+                >
+                  Get started <ArrowRight size={14} />
                 </Link>
               </div>
             )}
@@ -248,7 +340,7 @@ export default function Navbar() {
         )}
       </div>
       {logoutError && (
-        <div className="page-wrap pb-2 text-xs font-semibold text-rose-600" role="alert">
+        <div className="page-wrap pb-2 text-xs font-semibold text-danger" role="alert">
           {logoutError}
         </div>
       )}

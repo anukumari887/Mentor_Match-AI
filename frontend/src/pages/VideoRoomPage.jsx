@@ -9,12 +9,13 @@ import {
   Mic,
   MicOff,
   PhoneOff,
-  Shield,
   Video
 } from 'lucide-react';
 import { getBooking } from '../services/mentors';
 import { connectVideoSocket, getRoomDetails } from '../services/video';
 import { useAuth } from '../contexts/AuthContext';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
 
 function friendlyMediaError(error) {
   if (error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError') {
@@ -191,53 +192,52 @@ export default function VideoRoomPage() {
   };
 
   const leaveRoom = () => navigate('/sessions');
-  const otherUser = user.role === 'learner' ? booking?.mentorId : booking?.learnerId;
+  const otherUser = user?.role === 'learner' ? booking?.mentorId : booking?.learnerId;
 
   if (loading) {
     return (
-      <div className="page-wrap flex-1 py-16 text-center text-sm text-slate-600" role="status">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+      <div className="page-wrap flex-1 py-16 text-center text-xs text-ink-muted" role="status">
         <p className="mt-3">Joining the session...</p>
       </div>
     );
   }
 
   return (
-    <section className="page-wrap flex-1 py-8 sm:py-10">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+    <section className="page-wrap flex-1 py-8 sm:py-10 bg-bg text-ink transition-colors">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <Link className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-800 hover:underline" to="/sessions">
+          <Link className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline" to="/sessions">
             <ArrowLeft size={14} /> My sessions
           </Link>
-          <h1 className="mt-1 text-2xl font-extrabold text-slate-900">
+          <h1 className="mt-1 font-serif text-2xl font-semibold text-ink">
             Session with {otherUser?.name || 'your mentor'}
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <p className="rounded-full border border-slate-200 bg-surface-muted/60 px-3 py-1 text-xs font-bold text-slate-700" role="status">
+          <span className="flex h-2 w-2 rounded-full bg-success" />
+          <p className="rounded border border-border bg-surface px-2.5 py-1 text-xs font-medium text-ink" role="status">
             {connection}
           </p>
         </div>
       </header>
 
       {!room?.canJoin && !error && (
-        <div className="card mb-6 p-6 border-l-4 border-l-amber-500 bg-amber-50/40">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Clock size={18} className="text-amber-600" /> This room is not open yet
+        <Card variant="raised" padding="md" className="mb-6 border-l-4 border-l-warning bg-warning/5">
+          <h2 className="font-serif text-base font-semibold text-ink flex items-center gap-2">
+            <Clock size={16} className="text-warning" /> This room is not open yet
           </h2>
           {room && (
-            <p className="mt-2 text-xs leading-5 text-slate-600">
+            <p className="mt-2 text-xs leading-relaxed text-ink-muted">
               Rooms open 10 minutes prior to start time. You can join between{' '}
-              <strong className="text-slate-800">{new Date(room.opensAt).toLocaleString()}</strong> and{' '}
-              <strong className="text-slate-800">{new Date(room.closesAt).toLocaleString()}</strong>.
+              <strong className="text-ink">{new Date(room.opensAt).toLocaleString()}</strong> and{' '}
+              <strong className="text-ink">{new Date(room.closesAt).toLocaleString()}</strong>.
             </p>
           )}
-        </div>
+        </Card>
       )}
 
       {error && (
-        <div className="notice-error mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg p-4 text-sm font-medium" role="alert">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded border border-danger/40 bg-danger/10 p-4 text-xs sm:text-sm text-danger font-medium" role="alert">
           <span className="flex items-center gap-2">
             <AlertCircle size={16} /> {error}
           </span>
@@ -249,28 +249,28 @@ export default function VideoRoomPage() {
 
       {/* Video Viewport Stage */}
       <div className="grid gap-5 md:grid-cols-2">
-        <figure className="relative aspect-video overflow-hidden rounded-xl bg-slate-950 shadow-md border border-slate-800">
+        <figure className="relative aspect-video overflow-hidden rounded bg-ink/90 border border-border">
           <video autoPlay className="h-full w-full object-cover" muted playsInline ref={localVideo} />
-          <figcaption className="absolute bottom-3 left-3 rounded-md bg-slate-950/80 backdrop-blur-xs px-2.5 py-1 text-xs font-bold text-white border border-white/10">
+          <figcaption className="absolute bottom-3 left-3 rounded bg-ink/80 px-2 py-0.5 text-[11px] font-semibold text-surface border border-surface/20">
             You
           </figcaption>
           {cameraOff && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-sm text-slate-300">
-              <CameraOff size={28} className="mb-2 text-slate-500" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-ink/95 text-xs text-surface/80">
+              <CameraOff size={24} className="mb-1 text-surface/50" />
               Camera off
             </div>
           )}
         </figure>
 
-        <figure className="relative aspect-video overflow-hidden rounded-xl bg-slate-950 shadow-md border border-slate-800">
+        <figure className="relative aspect-video overflow-hidden rounded bg-ink/90 border border-border">
           {remoteStream && <video autoPlay className="h-full w-full object-cover" playsInline ref={remoteVideo} />}
           {!remoteStream && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-sm text-slate-400">
-              <Video size={30} className="mb-2 text-slate-600" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-xs text-surface/70">
+              <Video size={26} className="mb-2 text-surface/40" />
               Waiting for {otherUser?.name || 'the other participant'} to join.
             </div>
           )}
-          <figcaption className="absolute bottom-3 left-3 rounded-md bg-slate-950/80 backdrop-blur-xs px-2.5 py-1 text-xs font-bold text-white border border-white/10">
+          <figcaption className="absolute bottom-3 left-3 rounded bg-ink/80 px-2 py-0.5 text-[11px] font-semibold text-surface border border-surface/20">
             {otherUser?.name || 'Participant'}
           </figcaption>
         </figure>
@@ -280,37 +280,41 @@ export default function VideoRoomPage() {
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <button
           aria-label={muted ? 'Turn microphone on' : 'Mute microphone'}
-          className={`quiet-button text-xs py-2.5 px-4 rounded-full ${muted ? 'bg-rose-50 text-rose-700 border-rose-300' : ''}`}
+          className={`rounded border border-border bg-surface px-4 py-2 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors flex items-center gap-1.5 ${
+            muted ? 'border-danger/50 text-danger bg-danger/10' : ''
+          }`}
           disabled={!localStream}
           onClick={toggleMicrophone}
           type="button"
         >
-          {muted ? <MicOff size={16} /> : <Mic size={16} />}
+          {muted ? <MicOff size={14} /> : <Mic size={14} />}
           <span>{muted ? 'Unmute' : 'Mute'}</span>
         </button>
 
         <button
           aria-label={cameraOff ? 'Turn camera on' : 'Turn camera off'}
-          className={`quiet-button text-xs py-2.5 px-4 rounded-full ${cameraOff ? 'bg-rose-50 text-rose-700 border-rose-300' : ''}`}
+          className={`rounded border border-border bg-surface px-4 py-2 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors flex items-center gap-1.5 ${
+            cameraOff ? 'border-danger/50 text-danger bg-danger/10' : ''
+          }`}
           disabled={!localStream}
           onClick={toggleCamera}
           type="button"
         >
-          {cameraOff ? <CameraOff size={16} /> : <Camera size={16} />}
+          {cameraOff ? <CameraOff size={14} /> : <Camera size={14} />}
           <span>{cameraOff ? 'Camera on' : 'Camera off'}</span>
         </button>
 
         <button
-          className="primary-button bg-rose-700 hover:bg-rose-800 text-xs py-2.5 px-5 rounded-full"
+          className="rounded bg-danger px-4 py-2 text-xs font-semibold text-surface hover:opacity-90 transition-opacity flex items-center gap-1.5"
           onClick={leaveRoom}
           type="button"
         >
-          <PhoneOff size={16} /> Leave session
+          <PhoneOff size={14} /> Leave session
         </button>
       </div>
 
-      <p className="mt-4 text-center text-[11px] text-slate-500">
-        Camera and microphone access requires localhost or HTTPS. Direct WebRTC peer-to-peer encryption.
+      <p className="mt-4 text-center text-[11px] text-ink-muted">
+        Camera and microphone access requires localhost or HTTPS. Direct WebRTC peer-to-peer connection.
       </p>
     </section>
   );

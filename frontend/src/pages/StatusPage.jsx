@@ -10,6 +10,8 @@ import {
   Server,
   XCircle
 } from 'lucide-react';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
 
 export default function StatusPage() {
   const [health, setHealth] = useState(null);
@@ -43,38 +45,35 @@ export default function StatusPage() {
   const getStatusBadge = (status) => {
     if (status === 'ok') {
       return (
-        <span className="system-good inline-flex items-center gap-1.5">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Operational
-        </span>
+        <Badge variant="success" size="sm">
+          <CheckCircle2 className="h-3 w-3" /> Operational
+        </Badge>
       );
     }
     if (status === 'degraded') {
       return (
-        <span className="system-warn inline-flex items-center gap-1.5">
-          <AlertTriangle className="h-3.5 w-3.5" /> Degraded
-        </span>
+        <Badge variant="warning" size="sm">
+          <AlertTriangle className="h-3 w-3" /> Degraded
+        </Badge>
       );
     }
     return (
-      <span className="system-bad inline-flex items-center gap-1.5">
-        <XCircle className="h-3.5 w-3.5" /> Offline
-      </span>
+      <Badge variant="danger" size="sm">
+        <XCircle className="h-3 w-3" /> Offline
+      </Badge>
     );
   };
 
   return (
-    <div className="page-wrap max-w-4xl flex-1 py-10 sm:py-14">
+    <div className="page-wrap max-w-4xl flex-1 py-10 sm:py-14 bg-bg text-ink transition-colors">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-7 border-b border-slate-200 gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-7 border-b border-border gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-700">
-            <Activity size={13} />
-            <span>Infrastructure Health</span>
-          </div>
-          <h1 className="mt-1.5 text-2xl sm:text-3xl font-extrabold text-slate-900 flex items-center gap-2.5">
+          <p className="text-xs font-semibold tracking-wider uppercase text-accent">Infrastructure Health</p>
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink flex items-center gap-2.5">
             System Health & Service Status
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+          <p className="text-xs sm:text-sm text-ink-muted mt-1">
             Real-time telemetry and component heartbeat monitoring.
           </p>
         </div>
@@ -82,7 +81,7 @@ export default function StatusPage() {
         <button
           onClick={fetchHealth}
           disabled={loading}
-          className="quiet-button text-xs py-2 px-3.5"
+          className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised transition-colors"
           type="button"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -92,17 +91,16 @@ export default function StatusPage() {
 
       {loading && !health && (
         <div className="py-16 text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
-          <p className="text-xs sm:text-sm text-slate-500 mt-3">Querying cluster components...</p>
+          <p className="text-xs text-ink-muted">Querying cluster components...</p>
         </div>
       )}
 
       {error && (
-        <div className="notice-error mt-8 flex items-start gap-3 rounded-lg p-4">
-          <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+        <div className="mt-8 flex items-start gap-3 rounded border border-danger/40 bg-danger/10 p-4 text-xs sm:text-sm text-danger">
+          <XCircle className="w-5 h-5 text-danger shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-bold text-sm">System Unreachable</h3>
-            <p className="text-xs sm:text-sm text-rose-700 mt-0.5">{error}</p>
+            <h3 className="font-semibold text-sm">System Unreachable</h3>
+            <p className="mt-0.5">{error}</p>
           </div>
         </div>
       )}
@@ -110,20 +108,22 @@ export default function StatusPage() {
       {health && (
         <div className="mt-8 space-y-6">
           {/* Overall status banner */}
-          <div
-            className={`p-6 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+          <Card
+            variant="raised"
+            padding="lg"
+            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
               health.status === 'ok'
-                ? 'health-ok'
+                ? 'border-success/40 bg-success/5'
                 : health.status === 'degraded'
-                ? 'health-warn'
-                : 'health-bad'
+                ? 'border-warning/40 bg-warning/5'
+                : 'border-danger/40 bg-danger/5'
             }`}
           >
             <div>
-              <span className="text-xs uppercase font-extrabold tracking-wider text-slate-500">
+              <span className="text-[11px] uppercase font-semibold tracking-wider text-ink-muted">
                 Overall Platform Status
               </span>
-              <h2 className="text-xl font-bold text-slate-900 mt-0.5 capitalize">
+              <h2 className="font-serif text-xl font-semibold text-ink mt-0.5 capitalize">
                 {health.status === 'ok'
                   ? 'All Systems Operational'
                   : health.status === 'degraded'
@@ -131,57 +131,57 @@ export default function StatusPage() {
                   : 'System Outage Detected'}
               </h2>
               {lastChecked && (
-                <span className="text-xs text-slate-500 mt-1 block">
+                <span className="text-xs text-ink-muted mt-1 block">
                   Last verified at {lastChecked} ({health.clientLatencyMs}ms roundtrip)
                 </span>
               )}
             </div>
             <div>{getStatusBadge(health.status)}</div>
-          </div>
+          </Card>
 
           {/* Subsystems grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {/* MongoDB Card */}
-            <div className="card p-5 flex flex-col justify-between">
+            <Card variant="default" padding="md" className="flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
-                  <Database className="w-5 h-5" />
+                <div className="w-8 h-8 rounded bg-surface-raised border border-border text-ink flex items-center justify-center">
+                  <Database className="w-4 h-4 text-accent" />
                 </div>
                 {getStatusBadge(health.mongo)}
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-200/80">
-                <h3 className="font-bold text-slate-900 text-sm">MongoDB</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">Primary Datastore & Unique Indexes</p>
+              <div className="mt-4 pt-3 border-t border-border">
+                <h3 className="font-serif text-sm font-semibold text-ink">MongoDB</h3>
+                <p className="text-[11px] text-ink-muted mt-0.5">Primary Datastore & Unique Indexes</p>
               </div>
-            </div>
+            </Card>
 
             {/* Redis Card */}
-            <div className="card p-5 flex flex-col justify-between">
+            <Card variant="default" padding="md" className="flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 flex items-center justify-center">
-                  <Server className="w-5 h-5" />
+                <div className="w-8 h-8 rounded bg-surface-raised border border-border text-ink flex items-center justify-center">
+                  <Server className="w-4 h-4 text-accent" />
                 </div>
                 {getStatusBadge(health.redis)}
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-200/80">
-                <h3 className="font-bold text-slate-900 text-sm">Redis Cache</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">Distributed Locks & Rec Caching</p>
+              <div className="mt-4 pt-3 border-t border-border">
+                <h3 className="font-serif text-sm font-semibold text-ink">Redis Cache</h3>
+                <p className="text-[11px] text-ink-muted mt-0.5">Distributed Locks & Rec Caching</p>
               </div>
-            </div>
+            </Card>
 
             {/* ML Service Card */}
-            <div className="card p-5 flex flex-col justify-between">
+            <Card variant="default" padding="md" className="flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center">
-                  <Cpu className="w-5 h-5" />
+                <div className="w-8 h-8 rounded bg-surface-raised border border-border text-ink flex items-center justify-center">
+                  <Cpu className="w-4 h-4 text-accent" />
                 </div>
                 {getStatusBadge(health.ml)}
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-200/80">
-                <h3 className="font-bold text-slate-900 text-sm">ML Recommender</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">FastAPI Scoring Microservice</p>
+              <div className="mt-4 pt-3 border-t border-border">
+                <h3 className="font-serif text-sm font-semibold text-ink">ML Recommender</h3>
+                <p className="text-[11px] text-ink-muted mt-0.5">FastAPI Scoring Microservice</p>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       )}

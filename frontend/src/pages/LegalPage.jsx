@@ -1,16 +1,17 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, FileText, ShieldCheck } from 'lucide-react';
+import Card from '../components/Card';
 
 export default function LegalPage() {
   const location = useLocation();
 
   let title = 'Terms of Service';
-  let content = 'Please review our terms of service before using Mentor-Match AI.';
+  let content = 'Please review our terms of service before using Mentor-Match.';
   let detailedSections = [
     {
       heading: '1. Platform Overview',
-      body: 'Mentor-Match AI connects independent learners with expert mentors for paid 1-on-1 video consultations. We provide the scheduling infrastructure, WebRTC video calling rooms, and payment processing ledger.'
+      body: 'Mentor-Match connects independent learners with expert mentors for paid 1-on-1 video consultations. We provide the scheduling infrastructure, WebRTC video calling rooms, and payment processing ledger.'
     },
     {
       heading: '2. User Conduct & Integrity',
@@ -18,7 +19,7 @@ export default function LegalPage() {
     },
     {
       heading: '3. Booking Holds & Confirmations',
-      body: 'Selected session slots are held for up to 15 minutes to allow payment completion. If payment is not completed before the hold expires, the slot is automatically released back to the mentor’s public availability.'
+      body: 'Selected session slots are held for up to 10 minutes to allow payment completion. If payment is not completed before the hold expires, the slot is automatically released back to the mentor’s public availability.'
     }
   ];
 
@@ -52,45 +53,45 @@ export default function LegalPage() {
         body: 'If a mentor cancels a session at any time before completion, the learner receives an immediate full refund, and the cancellation is recorded on the mentor’s account.'
       },
       {
-        heading: '3. Technical Issues & Satisfaction',
+        heading: '3. Technical Issues & Mediation',
         body: 'If severe platform connectivity failures prevent a scheduled call from occurring, participants can report the issue within 48 hours for admin review and refund re-issuance.'
       }
     ];
   }
 
   return (
-    <div className="page-wrap max-w-3xl flex-1 py-12 sm:py-16">
+    <div className="page-wrap max-w-3xl flex-1 py-12 sm:py-16 bg-bg text-ink transition-colors">
       <Link
         to="/"
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-800 hover:underline mb-6"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline mb-6"
       >
-        <ArrowLeft size={15} /> Back to home
+        <ArrowLeft size={14} /> Back to home
       </Link>
 
-      <div className="card p-8 sm:p-10">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-700">
+      <Card variant="raised" padding="lg">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-accent">
           <FileText size={14} />
-          <span>Mentor-Match policies</span>
+          <span>Platform policies</span>
         </div>
-        <h1 className="mt-2 text-3xl font-extrabold text-slate-900">{title}</h1>
-        <p className="mt-3 text-base leading-7 text-slate-600">{content}</p>
+        <h1 className="mt-2 font-serif text-2xl sm:text-3xl font-semibold text-ink">{title}</h1>
+        <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-ink-muted">{content}</p>
 
-        <div className="mt-8 space-y-6 pt-6 border-t border-slate-200">
+        <div className="mt-8 space-y-6 pt-6 border-t border-border">
           {detailedSections.map((section, idx) => (
             <div key={idx}>
-              <h2 className="text-base font-bold text-slate-900">{section.heading}</h2>
-              <p className="mt-1.5 text-xs sm:text-sm leading-6 text-slate-600">{section.body}</p>
+              <h2 className="font-serif text-base font-semibold text-ink">{section.heading}</h2>
+              <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-ink-muted">{section.body}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-8 rounded-lg border border-brand-300 bg-brand-50/50 p-4 text-xs leading-5 text-slate-600 flex items-start gap-2.5">
-          <ShieldCheck size={16} className="text-brand-700 shrink-0 mt-0.5" />
+        <div className="mt-8 rounded border border-border bg-surface-raised/40 p-4 text-xs leading-relaxed text-ink-muted flex items-start gap-2.5">
+          <ShieldCheck size={16} className="text-accent shrink-0 mt-0.5" />
           <span>
-            Draft policy for the Mentor-Match service. Formal legal review is required before public production launch.
+            Clear and honest guidelines for learners and mentors using Mentor-Match.
           </span>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -6,16 +6,16 @@ import {
   CheckCircle2,
   Clock3,
   Globe,
-  Sparkles,
   Star,
-  UserRound,
   Briefcase
 } from 'lucide-react';
 import { createBooking, getMentor, listMentorSlots } from '../services/mentors';
 import { listMentorReviews } from '../services/reviews';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
 
 function rupees(value) {
-  return `Rs. ${new Intl.NumberFormat('en-IN').format(value)}`;
+  return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
 }
 
 export default function MentorDetailPage() {
@@ -76,8 +76,7 @@ export default function MentorDetailPage() {
 
   if (loading) {
     return (
-      <div className="page-wrap flex-1 py-16 text-center text-sm text-slate-600" role="status">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+      <div className="page-wrap flex-1 py-16 text-center text-xs text-ink-muted" role="status">
         <p className="mt-3">Loading mentor profile...</p>
       </div>
     );
@@ -85,14 +84,14 @@ export default function MentorDetailPage() {
 
   if (error) {
     return (
-      <section className="page-wrap flex-1 py-12">
-        <div className="notice-error flex flex-wrap items-center justify-between gap-3 rounded-lg p-4 text-sm" role="alert">
+      <section className="page-wrap flex-1 py-12 bg-bg text-ink">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded border border-danger/40 bg-danger/10 p-4 text-xs sm:text-sm text-danger" role="alert">
           <span>{error}</span>
           <button className="font-bold underline" onClick={() => setRetry((value) => value + 1)} type="button">
             Try again
           </button>
         </div>
-        <Link className="quiet-button mt-5 text-xs py-2 px-3.5" to="/mentors">
+        <Link className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised" to="/mentors">
           <ArrowLeft size={14} /> Back to mentors
         </Link>
       </section>
@@ -102,206 +101,208 @@ export default function MentorDetailPage() {
   if (!mentor) return null;
 
   return (
-    <section className="page-wrap flex-1 py-8 sm:py-12">
+    <section className="page-wrap flex-1 py-8 sm:py-12 bg-bg text-ink transition-colors">
       {/* Navigation Breadcrumb */}
       <Link
-        className="mb-6 inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-800 hover:underline"
+        className="mb-6 inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline"
         to="/mentors"
       >
-        <ArrowLeft size={15} /> All mentors
+        <ArrowLeft size={14} /> All mentors
       </Link>
 
       <div className="grid gap-8 lg:grid-cols-[1.4fr_20rem] lg:gap-12 items-start">
         {/* Left Column: Details */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Header Card */}
-          <div className="card p-6 sm:p-8">
+          <Card variant="raised" padding="lg">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-brand-800 font-extrabold text-xl shadow-xs">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded bg-surface-raised border border-border font-serif font-bold text-xl text-ink">
                 {mentor.name.slice(0, 2).toUpperCase()}
               </div>
               <div>
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{mentor.name}</h1>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-bold text-brand-700 border border-brand-200/60">
-                    <CheckCircle2 size={12} /> Verified mentor
-                  </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-ink">{mentor.name}</h1>
+                  <Badge variant="accent" size="sm">
+                    <CheckCircle2 size={11} className="mr-0.5" /> Approved by our team
+                  </Badge>
                 </div>
-                <p className="mt-1 text-sm font-semibold text-slate-600">{mentor.headline}</p>
+                <p className="mt-1 text-xs sm:text-sm text-ink-muted">{mentor.headline}</p>
 
-                <div className="mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-600">
-                  <span className="inline-flex items-center gap-1.5 font-medium">
-                    <Briefcase size={13} className="text-slate-400" />
-                    {mentor.experienceYears} years' experience
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-muted">
+                  <span className="inline-flex items-center gap-1">
+                    <Briefcase size={12} className="text-ink-muted" />
+                    {mentor.experienceYears} years experience
                   </span>
                   <span>·</span>
-                  <span className="inline-flex items-center gap-1 font-bold text-slate-800">
-                    <Star className="text-amber-500 fill-amber-400" size={13} />
+                  <span className="inline-flex items-center gap-1 font-semibold text-ink">
+                    <Star className="text-warning fill-warning" size={12} />
                     {mentor.ratingCount ? `${mentor.ratingAvg.toFixed(1)} (${mentor.ratingCount} reviews)` : 'New mentor'}
                   </span>
                   <span>·</span>
-                  <span className="inline-flex items-center gap-1.5 text-slate-500">
-                    <Globe size={13} /> {mentor.timezone || 'Asia/Kolkata'}
+                  <span className="inline-flex items-center gap-1 text-ink-muted">
+                    <Globe size={12} /> {mentor.timezone || 'Asia/Kolkata'}
                   </span>
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* About Section */}
-          <section className="card p-6 sm:p-7">
-            <h2 className="text-xl font-bold text-slate-900">About</h2>
-            <p className="mt-3.5 whitespace-pre-line text-sm leading-7 text-slate-600">
+          <Card variant="default" padding="md">
+            <h2 className="font-serif text-lg font-semibold text-ink">About</h2>
+            <p className="mt-2.5 whitespace-pre-line text-xs sm:text-sm leading-relaxed text-ink-muted">
               {mentor.bio || 'This mentor has not added a bio yet.'}
             </p>
-          </section>
+          </Card>
 
           {/* Focus Areas */}
-          <section className="card p-6 sm:p-7">
-            <h2 className="text-xl font-bold text-slate-900">Areas of focus</h2>
-            <div className="mt-3.5 flex flex-wrap gap-2">
+          <Card variant="default" padding="md">
+            <h2 className="font-serif text-lg font-semibold text-ink">Areas of focus</h2>
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {(mentor.skills || []).map((skill) => (
                 <span
                   key={skill}
-                  className="rounded-lg border border-slate-200 bg-surface-muted/60 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                  className="rounded border border-border bg-surface-raised px-2.5 py-1 text-xs font-medium text-ink"
                 >
                   {skill}
                 </span>
               ))}
             </div>
-          </section>
+          </Card>
 
           {/* Weekly Availability */}
-          <section className="card p-6 sm:p-7">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h2 className="text-xl font-bold text-slate-900">Weekly availability</h2>
-              <p className="text-xs text-slate-500">Times in {mentor.timezone || 'Asia/Kolkata'}</p>
+          <Card variant="default" padding="md">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="font-serif text-lg font-semibold text-ink">Weekly availability</h2>
+              <p className="text-[11px] text-ink-muted">Times in {mentor.timezone || 'Asia/Kolkata'}</p>
             </div>
             {mentor.availability?.length ? (
-              <ul className="mt-4 divide-y divide-slate-200">
+              <ul className="mt-3 divide-y divide-border">
                 {mentor.availability.map((window, index) => (
-                  <li className="flex justify-between items-center py-2.5 text-sm" key={`${window.dayOfWeek}-${index}`}>
-                    <span className="font-semibold text-slate-800">
+                  <li className="flex justify-between items-center py-2 text-xs text-ink" key={`${window.dayOfWeek}-${index}`}>
+                    <span className="font-medium">
                       {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][window.dayOfWeek]}
                     </span>
-                    <span className="text-xs font-mono font-medium text-slate-600 bg-surface-muted px-2.5 py-1 rounded-md">
+                    <span className="font-mono text-ink-muted bg-surface-raised border border-border px-2 py-0.5 rounded text-[11px]">
                       {window.startTime} – {window.endTime}
                     </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-4 text-sm text-slate-500">Availability has not been added yet.</p>
+              <p className="mt-3 text-xs text-ink-muted">Availability has not been added yet.</p>
             )}
-          </section>
+          </Card>
 
           {/* Learner Reviews */}
-          <section className="card p-6 sm:p-7">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h2 className="text-xl font-bold text-slate-900">Learner reviews</h2>
-              <span className="text-xs font-semibold text-slate-500">{mentor.ratingCount || 0} total</span>
+          <Card variant="default" padding="md">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="font-serif text-lg font-semibold text-ink">Learner reviews</h2>
+              <span className="text-xs text-ink-muted">{mentor.ratingCount || 0} total</span>
             </div>
 
-            {reviewsLoading && <p className="mt-4 text-sm text-slate-600" role="status">Loading reviews...</p>}
-            {reviewsError && <p className="notice-error mt-4 rounded-lg p-3 text-sm" role="alert">{reviewsError}</p>}
+            {reviewsLoading && <p className="mt-3 text-xs text-ink-muted" role="status">Loading reviews...</p>}
+            {reviewsError && <p className="mt-3 rounded border border-danger/40 bg-danger/10 p-2 text-xs text-danger" role="alert">{reviewsError}</p>}
             {!reviewsLoading && !reviewsError && reviews.length === 0 && (
-              <p className="mt-4 text-sm text-slate-500">No reviews yet for this mentor.</p>
+              <p className="mt-3 text-xs text-ink-muted">No reviews yet for this mentor.</p>
             )}
 
             {!reviewsLoading && reviews.length > 0 && (
-              <ul className="mt-4 divide-y divide-slate-200">
+              <ul className="mt-3 divide-y divide-border">
                 {reviews.map((review) => (
-                  <li className="py-4" key={review.id}>
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-bold text-slate-900">{review.learnerName}</p>
-                      <p className="inline-flex items-center gap-1 text-xs font-bold text-amber-500">
-                        <Star size={13} className="fill-amber-400" />
+                  <li className="py-3.5" key={review.id}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-ink">{review.learnerName}</p>
+                      <p className="inline-flex items-center gap-1 text-xs font-semibold text-ink">
+                        <Star size={12} className="text-warning fill-warning" />
                         <span>{review.rating}/5</span>
                       </p>
                     </div>
                     {review.comment && (
-                      <p className="mt-2 text-xs leading-5 text-slate-600">{review.comment}</p>
+                      <p className="mt-1.5 text-xs leading-relaxed text-ink-muted">{review.comment}</p>
                     )}
                   </li>
                 ))}
               </ul>
             )}
-          </section>
+          </Card>
         </div>
 
         {/* Right Sticky Sidebar: Booking Card */}
-        <aside className="card p-6 sm:p-7 sticky top-24 shadow-sm">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Session rate</p>
-            <div className="mt-1 flex items-baseline gap-1.5">
-              <p className="text-3xl font-extrabold text-slate-900">{rupees(mentor.pricePerHour)}</p>
-              <span className="text-xs font-medium text-slate-500">/ 60-min call</span>
+        <aside className="sticky top-20">
+          <Card variant="raised" padding="md">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Session rate</p>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <p className="text-2xl font-bold text-ink">{rupees(mentor.pricePerHour)}</p>
+                <span className="text-xs text-ink-muted">/ 60-min call</span>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-4 rounded-lg bg-surface-muted/50 p-3 text-xs leading-5 text-slate-600 flex items-start gap-2 border border-slate-200/60">
-            <CalendarDays className="mt-0.5 shrink-0 text-brand-600" size={15} />
-            <span>Includes 1-to-1 video room & money-back cancellation guarantee.</span>
-          </div>
+            <div className="mt-3 rounded border border-border bg-surface-raised/40 p-2.5 text-xs text-ink-muted flex items-start gap-2">
+              <CalendarDays className="mt-0.5 shrink-0 text-accent" size={14} />
+              <span>Free cancellation &ge;24 hours before the session.</span>
+            </div>
 
-          <div className="mt-6 pt-5 border-t border-slate-200">
-            <h2 className="text-base font-bold text-slate-900">Choose a session time</h2>
-            <p className="mt-0.5 text-xs text-slate-500">Times below use your device's time zone.</p>
+            <div className="mt-5 pt-4 border-t border-border">
+              <h2 className="font-serif text-sm font-semibold text-ink">Choose a session time</h2>
+              <p className="text-[11px] text-ink-muted">Times shown in your local timezone.</p>
 
-            {bookingError && (
-              <p className="notice-error mt-3 rounded-md p-2.5 text-xs font-medium" role="alert">
-                {bookingError}
-              </p>
-            )}
-            {slotError && (
-              <p className="notice-error mt-3 rounded-md p-2.5 text-xs font-medium" role="alert">
-                {slotError}
-              </p>
-            )}
+              {bookingError && (
+                <p className="mt-2.5 rounded border border-danger/40 bg-danger/10 p-2 text-xs text-danger" role="alert">
+                  {bookingError}
+                </p>
+              )}
+              {slotError && (
+                <p className="mt-2.5 rounded border border-danger/40 bg-danger/10 p-2 text-xs text-danger" role="alert">
+                  {slotError}
+                </p>
+              )}
 
-            {slotsLoading && (
-              <div className="py-6 text-center text-xs text-slate-500" role="status">
-                Loading available times...
-              </div>
-            )}
+              {slotsLoading && (
+                <div className="py-5 text-center text-xs text-ink-muted" role="status">
+                  Loading available times...
+                </div>
+              )}
 
-            {!slotsLoading && !slotError && slots.filter((slot) => slot.available).length === 0 && (
-              <p className="mt-4 text-xs text-slate-500 py-3 text-center rounded-lg bg-surface-muted">
-                No upcoming times are available. Check back soon.
-              </p>
-            )}
+              {!slotsLoading && !slotError && slots.filter((slot) => slot.available).length === 0 && (
+                <p className="mt-3 text-xs text-ink-muted py-2.5 text-center rounded bg-surface-raised border border-border">
+                  No upcoming times are available. Check back soon.
+                </p>
+              )}
 
-            {!slotsLoading && slots.filter((slot) => slot.available).length > 0 && (
-              <div className="mt-4 grid gap-2 max-h-72 overflow-y-auto pr-1">
-                {slots.filter((slot) => slot.available).map((slot) => (
-                  <button
-                    key={slot.startTime}
-                    className="quiet-button w-full justify-between text-xs py-2.5 px-3 hover:border-brand-500 hover:bg-brand-50/30 transition-all"
-                    disabled={bookingSaving}
-                    onClick={() => selectSlot(slot)}
-                    type="button"
-                  >
-                    <span className="flex items-center gap-1.5 font-semibold text-slate-800">
-                      <Clock3 size={13} className="text-brand-600" />
-                      {new Intl.DateTimeFormat(undefined, {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        timeZoneName: 'short'
-                      }).format(new Date(slot.startTime))}
-                    </span>
-                    {bookingSaving ? (
-                      <span className="text-[11px] font-bold text-brand-700">Holding...</span>
-                    ) : (
-                      <span className="text-[11px] font-bold text-brand-600">Select</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+              {!slotsLoading && slots.filter((slot) => slot.available).length > 0 && (
+                <div className="mt-3 grid gap-1.5 max-h-72 overflow-y-auto pr-1">
+                  {slots.filter((slot) => slot.available).map((slot) => (
+                    <button
+                      key={slot.startTime}
+                      className="w-full flex items-center justify-between rounded border border-border bg-surface p-2 text-xs text-ink hover:border-accent hover:bg-accent/5 transition-colors"
+                      disabled={bookingSaving}
+                      onClick={() => selectSlot(slot)}
+                      type="button"
+                    >
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Clock3 size={12} className="text-accent" />
+                        {new Intl.DateTimeFormat(undefined, {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          timeZoneName: 'short'
+                        }).format(new Date(slot.startTime))}
+                      </span>
+                      {bookingSaving ? (
+                        <span className="text-[11px] font-semibold text-accent">Holding...</span>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-accent">Select</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Card>
         </aside>
       </div>
     </section>

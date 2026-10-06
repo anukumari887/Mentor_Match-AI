@@ -424,3 +424,65 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
   - `npm --prefix frontend run build` completed with code 0 (all 1699 modules transformed).
   - Headless Chrome DOM dump confirmed full, successful mounting into `<div id="root">` with all navigation, hero components, mentor cards, and styling.
   - All 14 frontend Vitest suites (26 tests) passed.
+
+---
+
+## Frontend Redesign & Theme System (Human-Crafted Editorial Direction)
+
+### 1. Safety & Constraints
+- Working Branch: `frontend-redesign`
+- Hard Limit Compliance: Modified only files within `frontend/`, `docs/screenshots/themes/`, and `PROGRESS.md`. Unchanged backend, ML service, docker compose, databases, and API interfaces.
+
+### 2. Design Philosophy & Editorial Direction
+- **Guiding Statement:** "Calm, editorial and professional, like a well-made magazine or a good bookshop website."
+- **Typography:** Fully self-hosted without external HTTP requests via `@fontsource/newsreader` (editorial serif for titles and section headings) and `@fontsource/inter` (crisp sans-serif for UI labels, tables, and form inputs).
+- **Elimination of AI Clichés:**
+  - Zero gradient text, glowing neon drop shadows, glassmorphism blur filters, or floating blob decorations.
+  - Zero emoji badges, sparkles, or vague marketing superlatives.
+  - Varied asymmetrical layouts and whitespace rhythm (4/8/12/16/24/32/48/64/96 scale) rather than three identical centered rounded cards.
+  - Subtle borders and elevation surfaces rather than heavy blur shadows.
+
+### 3. Theme System (6 Themes, WCAG AA Compliant)
+1. **Light:** Warm off-white canvas (`#fbfaf7`), near-black ink (`#191714`), warm terracotta accent (`#9c4221`).
+2. **Dark:** Soft charcoal (`#141416`), dim muted text (`#dededc`), refined warm amber accent (`#d97736`).
+3. **Paper:** Literary cream canvas (`#f4efe6`), warm walnut ink (`#2c241b`), rich book-cloth accent (`#8c4a2f`).
+4. **Midnight:** Deep oceanic navy (`#0b131f`), crisp pale text (`#e6edf3`), cool cyan accent (`#38bdf8`).
+5. **Forest:** Calm pine mist canvas (`#f0f4f1`), deep evergreen ink (`#112419`), moss accent (`#2d6a4f`).
+6. **High Contrast:** Strict black and pure white with 2px borders, bold blue accent (`#094fc6`), maximum accessibility.
+
+- **Contrast Verification:** Every theme strictly satisfies WCAG AA (>= 4.5:1 for normal text).
+- **Pre-paint Theme Flash Prevention:** Embedded tiny pre-paint script in `frontend/index.html` to read `localStorage` and apply `data-theme` attribute and `<meta name="theme-color">` before the DOM renders.
+- **Theme Switcher:** Navbar dropdown with live swatch circles, current theme indicator, keyboard navigation (Esc closes, outside click closes).
+
+### 4. Component Library & Copy Integrity
+- **Reusable System:** Created standalone, token-driven components: `Button`, `Input`, `Select`, `Card`, `Badge`, `Tabs`, `Modal`, `Toast`, `EmptyState`, `Skeleton`, `ThemeMenu`, `Navbar`, and `Footer`.
+- **Truth in Public Copy:**
+  - Removed "100% money-back guarantee"; replaced with accurate platform refund rules (free cancellation >=24h prior, full refund if mentor cancels).
+  - Removed misleading "Verified" labels; updated to "Approved by our team".
+  - Clarified landing page sample mentor as "SAMPLE PROFILE" with realistic details and zero fake reviews.
+  - Resolved navbar link wrapping into clean, single-line items and a responsive mobile drawer (<900px).
+- **Bug Fix in Admin Service:** Fixed missing `/api` path prefix across all endpoints in `frontend/src/services/admin.js` (`/api/admin/stats`, `/api/admin/users`, etc.).
+
+### 5. Verifiable Verification & Test Results
+- **Frontend Test Suite:**
+  - Command: `npm --prefix frontend test -- --run`
+  - Output:
+    ```
+    Test Files  14 passed (14)
+         Tests  27 passed (27)
+      Duration  10.42s
+    ```
+- **Frontend Production Build:**
+  - Command: `npm --prefix frontend run build`
+  - Output:
+    ```
+    ✓ 1704 modules transformed.
+    dist/index.html                     1.90 kB
+    dist/assets/index-DadbXSUQ.css     45.45 kB │ gzip:   8.54 kB
+    dist/assets/index-BTo2PM7J.js     435.06 kB │ gzip: 119.97 kB
+    ✓ built in 14.66s
+    ```
+- **Automated Screenshot Suite:**
+  - Captured 60 full-fidelity screenshots in `docs/screenshots/themes/` across all 5 key pages (`landing`, `browse_mentors`, `mentor_detail`, `checkout`, `admin`), all 6 themes (`light`, `dark`, `paper`, `midnight`, `forest`, `high-contrast`), and both `desktop` (1280x800) and `phone` (375x812) viewports.
+  - Verified visual quality, contrast, responsiveness, and zero alignment issues.
+

@@ -2,11 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
-  Calendar,
   CalendarDays,
   CheckCircle2,
   Clock,
-  Sparkles,
   Star,
   Video,
   X
@@ -15,6 +13,8 @@ import { cancelBooking, listBookings } from '../services/mentors';
 import { useAuth } from '../contexts/AuthContext';
 import { submitReview } from '../services/reviews';
 import { submitComplaint } from '../services/admin';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
 
 const TABS = [
   { id: 'upcoming', label: 'Upcoming' },
@@ -127,38 +127,38 @@ export default function SessionsPage() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'confirmed':
-        return <span className="rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 px-2.5 py-0.5 text-xs font-bold capitalize">Confirmed</span>;
+        return <Badge variant="success" size="sm">Confirmed</Badge>;
       case 'pending':
-        return <span className="rounded-full bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 px-2.5 py-0.5 text-xs font-bold capitalize">Pending</span>;
+        return <Badge variant="warning" size="sm">Pending</Badge>;
       case 'completed':
-        return <span className="rounded-full bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-2.5 py-0.5 text-xs font-bold capitalize">Completed</span>;
+        return <Badge variant="neutral" size="sm">Completed</Badge>;
       default:
-        return <span className="rounded-full bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 px-2.5 py-0.5 text-xs font-bold capitalize">{status}</span>;
+        return <Badge variant="danger" size="sm">{status}</Badge>;
     }
   };
 
   return (
-    <section className="page-wrap flex-1 py-10 sm:py-14">
-      <header className="mb-6 border-b border-slate-200 pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <section className="page-wrap flex-1 py-10 sm:py-14 bg-bg text-ink transition-colors">
+      <header className="mb-6 border-b border-border pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-brand-700">Your calendar</p>
-          <h1 className="mt-1.5 text-3xl font-extrabold text-slate-900 sm:text-4xl">My sessions</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
+          <p className="text-xs font-semibold tracking-wider uppercase text-accent">Your calendar</p>
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink">My sessions</h1>
+          <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
             Track confirmed calls, rejoin live video rooms, and leave verified session feedback.
           </p>
         </div>
       </header>
 
       {/* Tabs */}
-      <div aria-label="Session status" className="flex gap-2 border-b border-slate-200 mb-6" role="tablist">
+      <div aria-label="Session status" className="flex gap-2 border-b border-border mb-6 overflow-x-auto" role="tablist">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             aria-selected={activeTab === tab.id}
-            className={`border-b-2 px-4 py-3 text-sm font-bold transition-all -mb-px ${
+            className={`border-b-2 px-4 py-2.5 text-xs sm:text-sm font-semibold transition-all -mb-px outline-none ${
               activeTab === tab.id
-                ? 'border-brand-600 text-brand-700'
-                : 'border-transparent text-slate-500 hover:text-slate-900'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-ink-muted hover:text-ink hover:border-border'
             }`}
             onClick={() => setActiveTab(tab.id)}
             role="tab"
@@ -170,7 +170,7 @@ export default function SessionsPage() {
       </div>
 
       {error && (
-        <div className="notice-error mb-6 flex items-center justify-between gap-3 rounded-lg p-4 text-sm" role="alert">
+        <div className="mb-6 flex items-center justify-between gap-3 rounded border border-danger/40 bg-danger/10 p-3.5 text-xs sm:text-sm text-danger" role="alert">
           <span>{error}</span>
           <button className="font-bold underline hover:opacity-80" onClick={() => setRefresh((value) => value + 1)} type="button">
             Try again
@@ -179,83 +179,91 @@ export default function SessionsPage() {
       )}
 
       {loading && (
-        <div className="py-16 text-center text-sm text-slate-600" role="status">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+        <div className="py-16 text-center text-xs text-ink-muted" role="status">
           <p className="mt-3">Loading your sessions...</p>
         </div>
       )}
 
       {!loading && !error && visibleBookings.length === 0 && (
-        <div className="card p-12 text-center my-6">
-          <CalendarDays className="mx-auto text-slate-400" size={32} />
-          <h2 className="mt-3.5 text-2xl font-bold text-slate-900">No {activeTab} sessions</h2>
-          <p className="mt-2 text-sm text-slate-600 max-w-sm mx-auto">
+        <Card variant="flat" padding="lg" className="text-center my-6">
+          <CalendarDays className="mx-auto text-ink-muted mb-2" size={30} />
+          <h2 className="mt-2 font-serif text-xl sm:text-2xl font-semibold text-ink">No {activeTab} sessions</h2>
+          <p className="mt-1.5 text-xs sm:text-sm text-ink-muted max-w-sm mx-auto">
             Your booked mentoring time and past session history will appear here.
           </p>
-          <Link className="primary-button mt-5 text-xs py-2 px-4" to="/mentors">
+          <Link
+            className="mt-4 inline-flex items-center gap-1.5 rounded bg-accent px-4 py-2 text-xs font-semibold text-accent-text hover:bg-accent-hover transition-colors"
+            to="/mentors"
+          >
             Browse mentors
           </Link>
-        </div>
+        </Card>
       )}
 
       {/* Booking List */}
       {!loading && (
         <div className="space-y-4">
           {visibleBookings.map((booking) => {
-            const otherUser = user.role === 'learner' ? booking.mentorId : booking.learnerId;
+            const otherUser = user?.role === 'learner' ? booking.mentorId : booking.learnerId;
             const canCancel = booking.status === 'pending' && new Date(booking.startTime).getTime() > Date.now();
 
             return (
-              <article key={booking._id} className="card p-6 transition-all">
+              <Card key={booking._id} variant="default" padding="md" className="transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <h2 className="text-xl font-bold text-slate-900">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="font-serif text-lg sm:text-xl font-semibold text-ink">
                         Session with {otherUser?.name || 'Mentor'}
                       </h2>
                       {getStatusBadge(booking.status)}
                     </div>
-                    <p className="mt-1.5 text-xs text-slate-600 flex items-center gap-1.5">
-                      <Clock size={13} className="text-brand-600" />
+                    <p className="mt-1.5 text-xs text-ink-muted flex items-center gap-1.5">
+                      <Clock size={12} className="text-accent" />
                       {formatSessionTime(booking.startTime)} · 60 minutes
                     </p>
-                    <p className="mt-1 text-xs font-semibold text-slate-800">
-                      Rs. {new Intl.NumberFormat('en-IN').format(booking.priceAtBooking)}
+                    <p className="mt-1 text-xs font-semibold text-ink">
+                      ₹{new Intl.NumberFormat('en-IN').format(booking.priceAtBooking)}
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
                     {booking.status === 'pending' && (
-                      <Link className="secondary-button text-xs py-2 px-3.5" to={`/checkout/${booking._id}`}>
+                      <Link
+                        className="rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised transition-colors"
+                        to={`/checkout/${booking._id}`}
+                      >
                         Review hold
                       </Link>
                     )}
                     {booking.status === 'confirmed' && (
-                      <Link className="primary-button text-xs py-2 px-3.5" to={`/session/${booking._id}`}>
-                        <Video size={14} /> Join session
+                      <Link
+                        className="inline-flex items-center gap-1.5 rounded bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-text hover:bg-accent-hover transition-colors shadow-sm"
+                        to={`/session/${booking._id}`}
+                      >
+                        <Video size={13} /> Join session
                       </Link>
                     )}
-                    {activeTab === 'past' && user.role === 'learner' && booking.status === 'completed' && !booking.hasReview && (
+                    {activeTab === 'past' && user?.role === 'learner' && booking.status === 'completed' && !booking.hasReview && (
                       <button
-                        className="quiet-button text-xs py-2 px-3.5"
+                        className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised transition-colors"
                         onClick={() => { setReviewingId(booking._id); setReviewSuccessId(''); }}
                         type="button"
                       >
-                        <Star size={13} className="text-amber-500" /> Leave a review
+                        <Star size={12} className="text-warning fill-warning" /> Leave a review
                       </button>
                     )}
                     <button
-                      className="quiet-button text-xs py-2 px-3.5 hover:text-amber-700"
+                      className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink-muted hover:text-ink hover:bg-surface-raised transition-colors"
                       onClick={() => { setReportingId(booking._id); setComplaintSuccessId(''); }}
                       type="button"
                     >
-                      <AlertCircle size={13} /> Report issue
+                      <AlertCircle size={12} /> Report issue
                     </button>
                     {canCancel && (
                       confirmCancelId === booking._id ? (
                         <div className="flex items-center gap-2">
                           <button
-                            className="primary-button bg-rose-700 hover:bg-rose-800 text-xs py-2 px-3.5"
+                            className="rounded bg-danger px-3 py-1.5 text-xs font-semibold text-surface hover:opacity-90 transition-opacity"
                             disabled={busyId === booking._id}
                             onClick={() => cancel(booking)}
                             type="button"
@@ -264,7 +272,7 @@ export default function SessionsPage() {
                           </button>
                           <button
                             aria-label="Keep booking"
-                            className="icon-button"
+                            className="p-1 rounded text-ink-muted hover:text-ink"
                             onClick={() => setConfirmCancelId('')}
                             type="button"
                           >
@@ -273,7 +281,7 @@ export default function SessionsPage() {
                         </div>
                       ) : (
                         <button
-                          className="quiet-button text-xs py-2 px-3.5 hover:text-rose-600"
+                          className="rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink-muted hover:text-danger hover:border-danger/30 transition-colors"
                           onClick={() => setConfirmCancelId(booking._id)}
                           type="button"
                         >
@@ -285,29 +293,29 @@ export default function SessionsPage() {
                 </div>
 
                 {reviewSuccessId === booking._id && (
-                  <p className="mt-4 rounded-md bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-200 p-2.5 text-xs font-semibold text-emerald-800 flex items-center gap-1.5" role="status">
-                    <CheckCircle2 size={14} /> Review submitted. Thank you.
+                  <p className="mt-4 rounded border border-success/40 bg-success/10 p-2.5 text-xs font-semibold text-ink flex items-center gap-1.5" role="status">
+                    <CheckCircle2 size={14} className="text-success" /> Review submitted. Thank you.
                   </p>
                 )}
 
                 {complaintSuccessId === booking._id && (
-                  <p className="mt-4 rounded-md bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-200 p-2.5 text-xs font-semibold text-emerald-800 flex items-center gap-1.5" role="status">
-                    <CheckCircle2 size={14} /> Issue reported to administrator. Our moderation team will review it shortly.
+                  <p className="mt-4 rounded border border-success/40 bg-success/10 p-2.5 text-xs font-semibold text-ink flex items-center gap-1.5" role="status">
+                    <CheckCircle2 size={14} className="text-success" /> Issue reported to administrator. Our moderation team will review it shortly.
                   </p>
                 )}
 
                 {/* Inline Review Form */}
                 {reviewingId === booking._id && (
                   <form
-                    className="mt-5 rounded-lg border border-slate-200 bg-surface-muted/40 p-4 sm:p-5"
+                    className="mt-5 rounded border border-border bg-surface-raised/40 p-4 sm:p-5"
                     onSubmit={(event) => { event.preventDefault(); submitSessionReview(booking); }}
                   >
-                    <h3 className="text-sm font-bold text-slate-900 mb-3">Leave a verified review</h3>
+                    <h3 className="font-serif text-sm font-semibold text-ink mb-3">Leave a verified review</h3>
                     <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
-                      <label className="form-label">
+                      <label className="block text-xs font-semibold text-ink">
                         Rating
                         <select
-                          className="form-input mt-1.5"
+                          className="mt-1.5 w-full rounded border border-border bg-surface px-3 py-1.5 text-xs text-ink outline-none focus:border-accent"
                           onChange={(event) => setReviewRating(event.target.value)}
                           value={reviewRating}
                         >
@@ -318,10 +326,10 @@ export default function SessionsPage() {
                           ))}
                         </select>
                       </label>
-                      <label className="form-label">
+                      <label className="block text-xs font-semibold text-ink">
                         Your review
                         <textarea
-                          className="form-input mt-1.5 min-h-20 resize-y"
+                          className="mt-1.5 w-full rounded border border-border bg-surface px-3 py-2 text-xs text-ink outline-none focus:border-accent min-h-20 resize-y"
                           maxLength={1000}
                           onChange={(event) => setReviewComment(event.target.value)}
                           placeholder="What was useful about this session?"
@@ -332,14 +340,14 @@ export default function SessionsPage() {
 
                     <div className="mt-4 flex items-center justify-end gap-2">
                       <button
-                        className="quiet-button text-xs py-2 px-3.5"
+                        className="rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised"
                         onClick={() => setReviewingId('')}
                         type="button"
                       >
                         Cancel
                       </button>
                       <button
-                        className="primary-button text-xs py-2 px-4"
+                        className="rounded bg-accent px-4 py-1.5 text-xs font-semibold text-accent-text hover:bg-accent-hover"
                         disabled={busyId === booking._id}
                         type="submit"
                       >
@@ -352,16 +360,16 @@ export default function SessionsPage() {
                 {/* Inline Complaint Form */}
                 {reportingId === booking._id && (
                   <form
-                    className="mt-5 rounded-lg border border-amber-200 bg-amber-50/20 dark:border-amber-900 dark:bg-amber-950/20 p-4 sm:p-5"
+                    className="mt-5 rounded border border-warning/40 bg-warning/5 p-4 sm:p-5"
                     onSubmit={(event) => { event.preventDefault(); submitSessionComplaint(booking); }}
                   >
-                    <h3 className="text-sm font-bold text-slate-900 mb-1">Report an issue with this session</h3>
-                    <p className="text-xs text-slate-500 mb-3">Please provide clear details. An administrator will review your report.</p>
+                    <h3 className="font-serif text-sm font-semibold text-ink mb-1">Report an issue with this session</h3>
+                    <p className="text-[11px] text-ink-muted mb-3">Please provide clear details. An administrator will review your report.</p>
                     <div className="space-y-3">
-                      <label className="form-label">
+                      <label className="block text-xs font-semibold text-ink">
                         Subject
                         <input
-                          className="form-input mt-1 text-xs"
+                          className="mt-1 w-full rounded border border-border bg-surface px-3 py-1.5 text-xs text-ink outline-none focus:border-accent"
                           maxLength={200}
                           onChange={(event) => setComplaintSubject(event.target.value)}
                           placeholder="e.g. Mentor arrived late, Video room connection failed"
@@ -369,10 +377,10 @@ export default function SessionsPage() {
                           required
                         />
                       </label>
-                      <label className="form-label">
+                      <label className="block text-xs font-semibold text-ink">
                         Description
                         <textarea
-                          className="form-input mt-1 min-h-20 resize-y text-xs"
+                          className="mt-1 w-full rounded border border-border bg-surface px-3 py-2 text-xs text-ink outline-none focus:border-accent min-h-20 resize-y"
                           maxLength={2000}
                           onChange={(event) => setComplaintDescription(event.target.value)}
                           placeholder="Describe the issue in detail..."
@@ -384,14 +392,14 @@ export default function SessionsPage() {
 
                     <div className="mt-4 flex items-center justify-end gap-2">
                       <button
-                        className="quiet-button text-xs py-2 px-3.5"
+                        className="rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised"
                         onClick={() => setReportingId('')}
                         type="button"
                       >
                         Cancel
                       </button>
                       <button
-                        className="primary-button bg-amber-600 hover:bg-amber-700 text-xs py-2 px-4"
+                        className="rounded bg-warning px-4 py-1.5 text-xs font-semibold text-ink hover:opacity-90"
                         disabled={busyId === booking._id}
                         type="submit"
                       >
@@ -400,7 +408,7 @@ export default function SessionsPage() {
                     </div>
                   </form>
                 )}
-              </article>
+              </Card>
             );
           })}
         </div>

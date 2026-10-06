@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, LockKeyhole, UserCheck, GraduationCap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import Card from '../components/Card';
+import Button from '../components/Button';
 
 export default function AuthPage({ mode }) {
   const isRegister = mode === 'register';
@@ -36,20 +38,20 @@ export default function AuthPage({ mode }) {
   };
 
   return (
-    <section className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
-      <div className="card w-full max-w-md p-7 sm:p-9">
+    <section className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6 bg-bg text-ink">
+      <Card variant="raised" padding="lg" className="w-full max-w-md">
         <div className="mb-6">
-          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-100 text-brand-800 shadow-xs">
-            <LockKeyhole size={20} aria-hidden="true" />
+          <div className="mb-3.5 flex h-10 w-10 items-center justify-center rounded bg-surface-raised border border-border text-ink">
+            <LockKeyhole size={18} aria-hidden="true" />
           </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-brand-700">Mentor-Match AI</p>
-          <h1 className="mt-1.5 text-2xl sm:text-3xl font-extrabold text-slate-900">
-            {isRegister ? 'Start with a conversation.' : 'Welcome back.'}
+          <p className="text-xs font-semibold tracking-wider uppercase text-accent">Mentor-Match</p>
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink">
+            {isRegister ? 'Create an account.' : 'Welcome back.'}
           </h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
+          <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
             {isRegister
-              ? 'Create an account to accelerate your skills and career with personal guidance.'
-              : 'Sign in to access your sessions, recommendations, and messages.'}
+              ? 'Connect with practitioners for career and technical mentorship.'
+              : 'Sign in to access your sessions and profile.'}
           </p>
         </div>
 
@@ -57,13 +59,13 @@ export default function AuthPage({ mode }) {
           {isRegister && (
             <>
               <div>
-                <label className="form-label" htmlFor="auth-name">
+                <label className="block text-xs font-semibold tracking-wide text-ink mb-1.5" htmlFor="auth-name">
                   Your name
                 </label>
                 <input
                   id="auth-name"
                   autoComplete="name"
-                  className="form-input mt-1.5"
+                  className="w-full rounded border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                   maxLength={100}
                   name="name"
                   onChange={updateField}
@@ -74,13 +76,13 @@ export default function AuthPage({ mode }) {
               </div>
 
               <fieldset>
-                <legend className="mb-1.5 text-sm font-semibold text-slate-900">I want to join as</legend>
+                <legend className="mb-1.5 text-xs font-semibold text-ink">I want to join as</legend>
                 <div className="grid grid-cols-2 gap-2.5">
                   <label
-                    className={`cursor-pointer rounded-lg border p-3 text-center transition-all ${
+                    className={`cursor-pointer rounded border p-2.5 text-center transition-all ${
                       form.role === 'learner'
-                        ? 'border-brand-600 bg-brand-50/70 text-brand-800 font-bold shadow-xs'
-                        : 'border-slate-200 bg-surface text-slate-600 hover:bg-surface-muted font-medium'
+                        ? 'border-accent bg-accent/10 text-accent font-semibold'
+                        : 'border-border bg-surface text-ink-muted hover:text-ink hover:bg-surface-raised font-normal'
                     }`}
                   >
                     <input
@@ -91,15 +93,15 @@ export default function AuthPage({ mode }) {
                       value="learner"
                       checked={form.role === 'learner'}
                     />
-                    <GraduationCap size={18} className="mx-auto mb-1 text-brand-700" />
-                    <span className="text-xs sm:text-sm">Learner</span>
+                    <GraduationCap size={16} className="mx-auto mb-1 text-inherit" />
+                    <span className="text-xs">Learner</span>
                   </label>
 
                   <label
-                    className={`cursor-pointer rounded-lg border p-3 text-center transition-all ${
+                    className={`cursor-pointer rounded border p-2.5 text-center transition-all ${
                       form.role === 'mentor'
-                        ? 'border-brand-600 bg-brand-50/70 text-brand-800 font-bold shadow-xs'
-                        : 'border-slate-200 bg-surface text-slate-600 hover:bg-surface-muted font-medium'
+                        ? 'border-accent bg-accent/10 text-accent font-semibold'
+                        : 'border-border bg-surface text-ink-muted hover:text-ink hover:bg-surface-raised font-normal'
                     }`}
                   >
                     <input
@@ -110,8 +112,8 @@ export default function AuthPage({ mode }) {
                       value="mentor"
                       checked={form.role === 'mentor'}
                     />
-                    <UserCheck size={18} className="mx-auto mb-1 text-brand-700" />
-                    <span className="text-xs sm:text-sm">Mentor</span>
+                    <UserCheck size={16} className="mx-auto mb-1 text-inherit" />
+                    <span className="text-xs">Mentor</span>
                   </label>
                 </div>
               </fieldset>
@@ -119,13 +121,13 @@ export default function AuthPage({ mode }) {
           )}
 
           <div>
-            <label className="form-label" htmlFor="auth-email">
+            <label className="block text-xs font-semibold tracking-wide text-ink mb-1.5" htmlFor="auth-email">
               Email address
             </label>
             <input
               id="auth-email"
               autoComplete="email"
-              className="form-input mt-1.5"
+              className="w-full rounded border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
               name="email"
               onChange={updateField}
               placeholder="you@domain.com"
@@ -136,13 +138,13 @@ export default function AuthPage({ mode }) {
           </div>
 
           <div>
-            <label className="form-label" htmlFor="auth-password">
+            <label className="block text-xs font-semibold tracking-wide text-ink mb-1.5" htmlFor="auth-password">
               Password
             </label>
             <input
               id="auth-password"
               autoComplete={isRegister ? 'new-password' : 'current-password'}
-              className="form-input mt-1.5"
+              className="w-full rounded border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
               minLength={isRegister ? 8 : 1}
               name="password"
               onChange={updateField}
@@ -152,38 +154,39 @@ export default function AuthPage({ mode }) {
               value={form.password}
             />
             {isRegister && (
-              <span className="mt-1.5 block text-xs font-normal text-slate-500">
+              <span className="mt-1 block text-[11px] text-ink-muted">
                 Minimum 8 characters.
               </span>
             )}
           </div>
 
           {error && (
-            <p role="alert" className="notice-error rounded-lg px-3 py-2.5 text-sm font-medium">
+            <p role="alert" className="rounded border border-danger/40 bg-danger/10 px-3 py-2 text-xs font-medium text-danger">
               {error}
             </p>
           )}
 
-          <button
-            className="primary-button w-full mt-2"
+          <Button
+            variant="primary"
+            className="w-full mt-2"
             disabled={submitting || loading}
             type="submit"
           >
             <span>{submitting ? 'Please wait...' : isRegister ? 'Create account' : 'Sign in'}</span>
-            {!submitting && <ArrowRight size={16} aria-hidden="true" />}
-          </button>
+            {!submitting && <ArrowRight size={14} aria-hidden="true" />}
+          </Button>
         </form>
 
-        <div className="mt-6 pt-5 border-t border-slate-200 text-center text-sm text-slate-600">
+        <div className="mt-6 pt-4 border-t border-border text-center text-xs text-ink-muted">
           {isRegister ? 'Already have an account?' : 'New to Mentor-Match?'}{' '}
           <Link
-            className="font-bold text-brand-700 hover:text-brand-800 underline-offset-4 hover:underline"
+            className="font-semibold text-accent hover:underline"
             to={isRegister ? '/login' : '/register'}
           >
             {isRegister ? 'Sign in' : 'Create an account'}
           </Link>
         </div>
-      </div>
+      </Card>
     </section>
   );
 }
