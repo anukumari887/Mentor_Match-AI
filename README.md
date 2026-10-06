@@ -46,7 +46,14 @@ cp .env.example .env
 docker compose up --build
 ```
 
-### 3. Access Services
+### 3. Load Local Demo Data
+With the Compose services running, open another terminal in the project folder and run:
+```bash
+npm run seed
+```
+The seed is safe to run more than once. It creates learner and mentor profiles, three completed sample sessions with reviews, twelve approved mentors, and two pending mentor applications.
+
+### 4. Access Services
 - **Web Application:** [http://localhost:3000](http://localhost:3000)
 - **Backend Health Check:** [http://localhost:5000/api/health](http://localhost:5000/api/health)
 - **Mailpit Web Inbox:** [http://localhost:8025](http://localhost:8025)
@@ -54,9 +61,18 @@ docker compose up --build
 - **Prometheus UI:** [http://localhost:9090](http://localhost:9090)
 - **Grafana Dashboard:** [http://localhost:3001](http://localhost:3001) (with `--profile monitoring`)
 
+### Video Session Check (Local)
+- Camera and microphone access is available on `localhost` or over HTTPS. Allow both permissions when the browser asks.
+- Sign in as the learner and mentor in two separate browser profiles. Book and confirm a mock-payment session; the room opens 10 minutes before its start and closes 15 minutes after its end.
+- Open **My sessions** in both profiles and choose **Join session**. Use the mute, camera, and leave controls during the call.
+- Use separate participants; joining with anyone outside the booking or after the room is full is rejected.
+
 ---
 
 ## Demo Accounts (Local Only)
-All demo accounts use password: `Demo@12345` (Admin uses password configured in `.env`).
+
+Seeded learner accounts are `learner01@mentormatch.local` through `learner05@mentormatch.local`. Seeded mentor accounts are `mentor01@mentormatch.local` through `mentor14@mentormatch.local`; mentors 13 and 14 are pending approval.
+
+All seeded learner and mentor accounts use password `Demo@12345`. The admin account is `admin@mentormatch.local`; its password is the value of `ADMIN_PASSWORD` in `.env`.
 
 Detailed documentation and test scripts are available in the `docs/` folder and `BUILD_PLAN.md`.

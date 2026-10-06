@@ -5,8 +5,11 @@ const logger = require('./config/logger');
 const { connectMongoWithRetry, mongoose } = require('./config/database');
 const { connectRedisWithRetry, getRedisClient } = require('./config/redis');
 const { ensureAdminUser } = require('./services/adminSeed');
+const { startBookingJobs, stopBookingJobs } = require('./services/bookingJobs');
+const { createVideoServer } = require('./socket/video');
 
 const server = http.createServer(app);
+let io;
 
 async function startServer() {
   try {
@@ -21,7 +24,13 @@ async function startServer() {
     // 3. Connect to Redis with retry
     await connectRedisWithRetry();
 
-    // 4. Start listening on configured port
+    // 4. Start expiry processing for pending booking holds
+    startBookingJobs();
+
+    // 5. Attach authenticated session signaling to the backend HTTP server
+    io = createVideoServer(server);
+
+    // 6. Start listening on configured port
     server.listen(env.PORT, () => {
       logger.info(`Backend server successfully listening on port ${env.PORT}`);
     });
@@ -34,8 +43,14 @@ async function startServer() {
 // Graceful shutdown handlers
 async function handleShutdown(signal) {
   logger.info(`Received ${signal}. Commencing graceful shutdown...`);
+  stopBookingJobs();
 
-  server.close(async () => {
+  const closeServer = (callback) => {
+    if (io) io.close(callback);
+    else server.close(callback);
+  };
+
+  closeServer(async () => {
     logger.info('HTTP server closed.');
 
     try {
@@ -76,5 +91,6 @@ if (require.main === module) {
 
 module.exports = {
   server,
-  startServer
+  startServer,
+  get io() { return io; }
 };

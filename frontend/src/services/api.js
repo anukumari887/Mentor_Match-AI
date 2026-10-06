@@ -16,9 +16,12 @@ api.interceptors.response.use(
     if (error.response && error.response.data && error.response.data.error) {
       return Promise.reject(error.response.data.error);
     }
+    const networkUnavailable = !error.response;
     return Promise.reject({
-      code: 'NETWORK_ERROR',
-      message: error.message || 'Unable to connect to the server.',
+      code: networkUnavailable ? 'NETWORK_ERROR' : error.code || 'API_ERROR',
+      message: networkUnavailable
+        ? 'Cannot reach the Mentor-Match server. Start the backend at localhost:5000, then try again.'
+        : error.message || 'Unable to complete the request.',
       details: []
     });
   }

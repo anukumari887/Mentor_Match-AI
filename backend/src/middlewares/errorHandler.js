@@ -41,8 +41,7 @@ function errorHandler(err, req, res, next) {
       },
       req: {
         method: req.method,
-        url: req.originalUrl,
-        body: req.body
+        url: req.originalUrl
       }
     }, 'Unhandled server error');
 
