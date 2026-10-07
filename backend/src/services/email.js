@@ -4,10 +4,12 @@ const logger = require('../config/logger');
 const User = require('../models/User');
 const { generateIcsCalendar } = require('../utils/calendar');
 
+const isSecure = env.SMTP_SECURE !== undefined ? env.SMTP_SECURE : env.SMTP_PORT === 465;
+
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: env.SMTP_PORT,
-  secure: false,
+  secure: isSecure,
   ...(env.SMTP_USER ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASS } } : {})
 });
 
@@ -46,7 +48,7 @@ function formatRupeesFromPaise(paise) {
 async function sendEmail({ to, subject, text, html, attachments }) {
   if (!to) return;
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: env.EMAIL_FROM,
       to,
       subject,
@@ -54,8 +56,10 @@ async function sendEmail({ to, subject, text, html, attachments }) {
       html,
       attachments
     });
+    logger.info({ to, subject, messageId: info?.messageId }, 'Email notification sent successfully');
+    return info;
   } catch (error) {
-    logger.warn({ message: error.message }, 'Could not send email; continuing without error');
+    logger.error({ to, subject, err: error.message }, 'Could not send email notification');
   }
 }
 

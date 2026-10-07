@@ -53,7 +53,7 @@ describe('MentorDetailPage', () => {
     );
 
     await screen.findByRole('heading', { name: 'Asha Rao' });
-    fireEvent.click(screen.getByRole('button', { name: /2 Dec/ }));
+    fireEvent.click(screen.getByRole('button', { name: /(2 Dec|Dec 2)/ }));
 
     await waitFor(() => expect(createBooking).toHaveBeenCalledWith({
       mentorId: 'mentor-id',

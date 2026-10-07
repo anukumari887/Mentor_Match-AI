@@ -1118,6 +1118,42 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 | `frontend/src/pages/VerifyEmailPage.test.jsx` | Unit tests for /verify-email token scrubbing and API states |
 | `frontend/src/services/mentors.js` | Added `downloadBookingIcs` API helper |
 
+---
+
+## Phase: CI/CD, Camera Testing Preview, and Email Notification Diagnostics & Resolution
+
+### 1. Root Cause Analysis
+1. **`.github/workflows/deploy.yml` Failure at Startup:**
+   - **Error:** `Invalid workflow file: .github/workflows/deploy.yml#L1 (Line: 17, Col: 9): Unrecognized named-value: 'secrets'.`
+   - **Root Cause:** GitHub Actions workflow syntax does not allow the `secrets` context inside job-level `if:` expressions.
+   - **Fix:** Replaced the invalid job-level `if:` check with a validation step (`Validate deployment credentials`) that checks the secrets in step environment variables and safely outputs a skip signal (`configured=false`) to bypass subsequent ECS deployment steps cleanly when secrets are not yet configured in GitHub repository settings.
+
+2. **`.github/workflows/ci.yml` Test Failure:**
+   - **Error:** `src/pages/MentorDetailPage.test.jsx > creates a booking when a learner selects an available slot: Unable to find an accessible element with the role "button" and name "/2 Dec/"`
+   - **Root Cause:** In standard Ubuntu CI runners running Node.js with default `en-US` locale, `Intl.DateTimeFormat` formats `2026-12-02T10:00:00.000Z` as `"Wed, Dec 2, ..."` rather than `"2 Dec"`. The hardcoded `/2 Dec/` regex failed on CI.
+   - **Fix:** Updated regex to `/(2 Dec|Dec 2)/` so that it reliably matches across both UK/IN and US locale formatting.
+
+3. **Backend Lint Warnings in CI:**
+   - **Warnings:** In `backend/tests/password-lifecycle.test.js`, `crypto`, `changePasswordSchema`, `forgotPasswordSchema`, `resetPasswordSchema` were declared but unused.
+   - **Fix:** Removed unused imports while keeping `passwordValidator` and `calculateMentorCompleteness`. Verified `npm --prefix backend run lint` exits with 0 problems and 0 warnings.
+
+4. **Camera Testing Preview Not Showing System Camera Stream:**
+   - **Problem:** When testing camera in `Settings` (`CameraMicCheckCard.jsx`), clicking "Test camera and microphone" acquired the `MediaStream`, but the preview window remained black or failed to display the user's face.
+   - **Root Cause:** In `CameraMicCheckCard.jsx`, the `<video>` element was conditionally rendered only when `testing === true`. When `startTest()` ran, `setTesting(true)` was queued, so `videoRef.current` was `null` at the moment `videoRef.current.srcObject = stream` executed. When React subsequently mounted `<video>`, no `srcObject` was attached and `.play()` was not called. Furthermore, toggling camera off and on unmounted/remounted the video tag without reattaching the stream.
+   - **Fix:** Added a synchronization `useEffect` listening to `[testing, cameraOff]` as well as a dynamic callback ref on `<video>` that immediately binds `streamRef.current`, sets `muted = true`, and starts video playback (`el.play?.()`).
+
+5. **Email Notifications:**
+   - **Clarification & Fix:** In the Docker local environment, transactional emails are sent via Mailpit (SMTP on port 1025). All outgoing emails are captured locally and viewable in real-time in the Mailpit Web UI at `http://localhost:8025`.
+   - **Enhanced:** Added `SMTP_SECURE` to `backend/src/config/env.js`, enabled automatic SSL/TLS detection (`secure: true` on port 465 or when `SMTP_SECURE=true`), and improved `sendEmail` logging to log successful delivery and clear error messages.
+
+### 2. Verifiable Test Proofs
+- **Backend Lint:** `npm --prefix backend run lint` -> `0 problems (0 errors, 0 warnings)`
+- **Backend Unit & Integration Tests:** `npm --prefix backend test` -> `21 passed, 21 total; 150 passed, 150 total`
+- **Frontend Unit & Component Tests:** `npm --prefix frontend test` -> `26 passed, 26 total; 81 passed, 81 total`
+- **Frontend Production Bundle Build:** `npm --prefix frontend run build` -> `built in 11.66s`
+- **ML Service Pytest (in Docker):** `docker exec mentormatch-ml python -m pytest -q tests` -> `8 passed, 1 warning in 2.39s`
+
+
 
 
 

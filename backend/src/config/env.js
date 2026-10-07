@@ -31,6 +31,7 @@ const envSchema = z.object({
 
   SMTP_HOST: z.string().default('mailpit'),
   SMTP_PORT: z.coerce.number().default(1025),
+  SMTP_SECURE: z.coerce.boolean().optional(),
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASS: z.string().optional().default(''),
   EMAIL_FROM: z.string().default('Mentor-Match <no-reply@mentormatch.local>'),

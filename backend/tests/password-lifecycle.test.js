@@ -1,5 +1,3 @@
-const crypto = require('crypto');
-
 jest.mock('bcryptjs', () => ({
   hash: jest.fn(),
   compare: jest.fn()
@@ -37,12 +35,7 @@ const emailService = require('../src/services/email');
 const { verifyToken, generateToken, setAuthCookie, clearAuthCookie } = require('../src/utils/token');
 const { requireAuth } = require('../src/middlewares/auth');
 const authController = require('../src/controllers/auth.controller');
-const {
-  passwordValidator,
-  changePasswordSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema
-} = require('../src/validations/auth.validation');
+const { passwordValidator } = require('../src/validations/auth.validation');
 const { calculateMentorCompleteness } = require('../src/utils/completeness');
 
 function createResponse() {

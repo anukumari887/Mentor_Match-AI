@@ -134,6 +134,22 @@ export default function CameraMicCheckCard() {
     };
   }, []);
 
+  // Synchronize media stream with video element whenever preview state or camera toggles
+  useEffect(() => {
+    if (testing && !cameraOff && videoRef.current && streamRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      videoRef.current.muted = true;
+      try {
+        const playPromise = videoRef.current.play?.();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {});
+        }
+      } catch {}
+    }
+  }, [testing, cameraOff]);
+
   // Setup Audio Analyser for microphone meter
   const setupAudioAnalyser = (stream) => {
     if (audioContextRef.current) {
@@ -239,6 +255,11 @@ export default function CameraMicCheckCard() {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.muted = true;
+        try {
+          const p = videoRef.current.play?.();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch {}
       }
 
       setupAudioAnalyser(stream);
@@ -390,7 +411,21 @@ export default function CameraMicCheckCard() {
               </div>
             ) : (
               <video
-                ref={videoRef}
+                ref={(el) => {
+                  videoRef.current = el;
+                  if (el && streamRef.current && !cameraOff) {
+                    if (el.srcObject !== streamRef.current) {
+                      el.srcObject = streamRef.current;
+                    }
+                    el.muted = true;
+                    try {
+                      const p = el.play?.();
+                      if (p && typeof p.catch === 'function') {
+                        p.catch(() => {});
+                      }
+                    } catch {}
+                  }
+                }}
                 autoPlay
                 playsInline
                 muted

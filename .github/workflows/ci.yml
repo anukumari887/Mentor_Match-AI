@@ -92,6 +92,8 @@ jobs:
         run: pip install -r ml-service/requirements.txt
 
       - name: Run ML service tests
+        env:
+          PYTHONPATH: ml-service
         run: python -m pytest -q ml-service/tests
 
   build-docker-images:
