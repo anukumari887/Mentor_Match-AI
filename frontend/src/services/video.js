@@ -7,5 +7,8 @@ export async function getRoomDetails(bookingId) {
 }
 
 export function connectVideoSocket() {
-  return io(import.meta.env.VITE_API_URL || 'http://localhost:5000', { withCredentials: true });
+  const socketUrl = typeof import.meta.env.VITE_API_URL === 'string'
+    ? import.meta.env.VITE_API_URL
+    : (import.meta.env.PROD ? undefined : 'http://localhost:5000');
+  return io(socketUrl, { withCredentials: true });
 }

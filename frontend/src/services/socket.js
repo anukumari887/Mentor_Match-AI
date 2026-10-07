@@ -4,7 +4,10 @@ let sharedSocket = null;
 
 export function getChatSocket() {
   if (!sharedSocket || sharedSocket.disconnected) {
-    sharedSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+    const socketUrl = typeof import.meta.env.VITE_API_URL === 'string'
+      ? import.meta.env.VITE_API_URL
+      : (import.meta.env.PROD ? undefined : 'http://localhost:5000');
+    sharedSocket = io(socketUrl, {
       withCredentials: true,
       autoConnect: true,
       reconnection: true,

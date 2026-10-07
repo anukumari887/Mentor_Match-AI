@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -76,6 +78,25 @@ app.use('/', metricsRoutes);
 
 // Main API routes
 app.use('/api', apiRoutes);
+
+// Serve compiled frontend in production when available
+const frontendDist = path.resolve(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.use((req, res, next) => {
+    if (
+      req.path.startsWith('/api') ||
+      req.path.startsWith('/metrics') ||
+      req.path.startsWith('/socket.io')
+    ) {
+      return next();
+    }
+    if (req.method === 'GET' && req.accepts('html')) {
+      return res.sendFile(path.join(frontendDist, 'index.html'));
+    }
+    return next();
+  });
+}
 
 // Catch-all 404 handler
 app.use(notFoundHandler);
