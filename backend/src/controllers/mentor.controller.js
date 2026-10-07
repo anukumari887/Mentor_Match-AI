@@ -104,9 +104,32 @@ async function getMentor(req, res, next) {
   }
 }
 
+const { calculateMentorCompleteness, triggerMentorAdminReviewNotification } = require('../utils/completeness');
+
+async function requestReview(req, res, next) {
+  try {
+    const mentorId = req.user._id;
+    const profile = await MentorProfile.findOne({ userId: mentorId });
+    if (!profile) {
+      return next(new AppError('Mentor profile not found.', 404, 'NOT_FOUND'));
+    }
+
+    const completeness = calculateMentorCompleteness(profile);
+    if (!completeness.isComplete) {
+      return next(new AppError('Please complete all required fields before submitting for review.', 400, 'PROFILE_INCOMPLETE', completeness.missingFields));
+    }
+
+    await triggerMentorAdminReviewNotification(mentorId);
+    return res.status(200).json({ message: 'Profile submitted for review.' });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   getMentors,
   getMentor,
+  requestReview,
   escapeRegex,
   getSort
 };

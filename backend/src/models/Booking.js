@@ -16,6 +16,7 @@ const bookingSchema = new mongoose.Schema({
   expiresAt: Date,
   paymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
   reminderSent: { type: Boolean, default: false },
+  reminder24hSent: { type: Boolean, default: false },
   completedAt: Date,
   cancelledAt: Date,
   cancelledBy: { type: String, enum: ['learner', 'mentor'] },

@@ -7,7 +7,7 @@ const {
 } = require('../validations/profile.validation');
 const { AppError } = require('../utils/errors');
 const { clearLearnerRecommendations } = require('../services/recommendations/cache');
-const { formatMentorProfile } = require('../utils/completeness');
+const { formatMentorProfile, triggerMentorAdminReviewNotification } = require('../utils/completeness');
 
 async function getProfile(req, res, next) {
   try {
@@ -55,6 +55,9 @@ async function updateProfile(req, res, next) {
         { $set: validatedData },
         { new: true, upsert: true, runValidators: true }
       );
+      if (req.user.emailVerified) {
+        await triggerMentorAdminReviewNotification(_id);
+      }
       updatedProfile = formatMentorProfile(updatedProfile);
     } else {
       return next(new AppError('Admins cannot update learner/mentor profiles.', 400, 'INVALID_ROLE'));

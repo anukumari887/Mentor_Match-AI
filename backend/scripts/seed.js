@@ -38,7 +38,10 @@ const learners = [
 async function upsertUser({ name, email, role, passwordHash }) {
   return User.findOneAndUpdate(
     { email },
-    { $setOnInsert: { name, email, role, passwordHash, isActive: true } },
+    {
+      $set: { emailVerified: true, emailVerifiedAt: new Date() },
+      $setOnInsert: { name, email, role, passwordHash, isActive: true }
+    },
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
 }

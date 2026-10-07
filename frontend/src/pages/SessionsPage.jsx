@@ -10,7 +10,7 @@ import {
   Video,
   X
 } from 'lucide-react';
-import { cancelBooking, listBookings } from '../services/mentors';
+import { cancelBooking, downloadBookingIcs, listBookings } from '../services/mentors';
 import { useAuth } from '../contexts/AuthContext';
 import { submitReview } from '../services/reviews';
 import { submitComplaint } from '../services/admin';
@@ -18,6 +18,8 @@ import { createConversation, getChatAccess } from '../services/chat';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Avatar from '../components/Avatar';
+import Tabs from '../components/Tabs';
+import Toast from '../components/Toast';
 import {
   EmptyStateSessions,
   EmptyStateSessionsUpcoming,
@@ -62,6 +64,26 @@ export default function SessionsPage() {
   const [refresh, setRefresh] = useState(0);
   const [chatAccessMap, setChatAccessMap] = useState({});
   const [startingChatId, setStartingChatId] = useState('');
+  const [downloadingIcsId, setDownloadingIcsId] = useState('');
+  const [toast, setToast] = useState(null);
+
+  const handleDownloadIcs = async (bookingId) => {
+    setDownloadingIcsId(bookingId);
+    try {
+      await downloadBookingIcs(bookingId);
+      setToast({
+        variant: 'success',
+        message: 'Calendar file downloaded successfully.'
+      });
+    } catch {
+      setToast({
+        variant: 'error',
+        message: 'Could not download calendar file. Please try again.'
+      });
+    } finally {
+      setDownloadingIcsId('');
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -290,6 +312,21 @@ export default function SessionsPage() {
             Track confirmed calls, rejoin live video rooms, and leave verified session feedback.
           </p>
         </div>
+
+        {/* List | Calendar switch */}
+        <div className="self-start sm:self-auto">
+          <Tabs
+            tabs={[
+              { id: 'list', label: 'List' },
+              { id: 'calendar', label: 'Calendar' }
+            ]}
+            activeTab="list"
+            onChange={(tabId) => {
+              if (tabId === 'calendar') navigate('/calendar');
+            }}
+            aria-label="View mode"
+          />
+        </div>
       </header>
 
       {refundPendingCount > 0 && (
@@ -402,6 +439,17 @@ export default function SessionsPage() {
                       </Link>
                     )}
                     {renderJoinButton(booking)}
+                    {['confirmed', 'completed'].includes(booking.status) && (
+                      <button
+                        className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised transition-colors"
+                        disabled={downloadingIcsId === booking._id}
+                        onClick={() => handleDownloadIcs(booking._id)}
+                        type="button"
+                      >
+                        <CalendarDays size={12} />
+                        <span>{downloadingIcsId === booking._id ? 'Downloading...' : 'Add to calendar'}</span>
+                      </button>
+                    )}
                     {user?.role === 'learner' && ['confirmed', 'completed'].includes(booking.status) && (() => {
                       const mentorId = booking.mentorId?._id || booking.mentorId;
                       const access = chatAccessMap[mentorId];
@@ -587,6 +635,14 @@ export default function SessionsPage() {
             );
           })}
         </div>
+      )}
+      {toast && (
+        <Toast
+          variant={toast.variant}
+          message={toast.message}
+          onClose={() => setToast(null)}
+          duration={5000}
+        />
       )}
     </section>
   );

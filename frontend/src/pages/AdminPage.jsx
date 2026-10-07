@@ -32,6 +32,7 @@ import {
 import { approveMentor, listPendingMentors, rejectMentor } from '../services/mentors';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import { useAuth } from '../contexts/AuthContext';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: Activity },
@@ -44,6 +45,7 @@ const TABS = [
 ];
 
 export default function AdminPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -270,7 +272,10 @@ export default function AdminPage() {
     <div className="page-wrap flex-1 py-8 sm:py-12 bg-bg text-ink transition-colors">
       {/* Page Header */}
       <div className="mb-8 border-b border-border pb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
+        <div className="min-w-0">
+          <p className="font-serif text-base sm:text-lg font-semibold text-ink truncate mb-1" title={user?.name || undefined}>
+            {user?.name ? `Welcome back, ${user.name}` : 'Welcome back'}
+          </p>
           <p className="text-xs font-semibold tracking-wider uppercase text-accent">Admin Control Center</p>
           <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink">Platform Operations</h1>
           <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">

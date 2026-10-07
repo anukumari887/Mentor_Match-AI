@@ -6,6 +6,8 @@ const Payout = require('../models/Payout');
 const Complaint = require('../models/Complaint');
 const FeedbackEvent = require('../models/FeedbackEvent');
 const { AppError } = require('../utils/errors');
+const logger = require('../config/logger');
+const { sendRefundCompletedEmail } = require('../services/email');
 const adminMentorController = require('./adminMentor.controller');
 const {
   objectIdSchema,
@@ -297,6 +299,27 @@ async function markPaymentRefunded(req, res, next) {
     payment.refundReference = refundReference;
     payment.refundedAt = new Date();
     await payment.save();
+
+    if (typeof Payment.findOneAndUpdate === 'function') {
+      try {
+        const claimed = await Payment.findOneAndUpdate(
+          { _id: id, refundedEmailSentAt: null },
+          { $set: { refundedEmailSentAt: new Date() } },
+          { new: true }
+        );
+        if (claimed) {
+          const [learner, booking] = await Promise.all([
+            User.findById(payment.learnerId),
+            Booking.findById(payment.bookingId)
+          ]);
+          if (learner && booking) {
+            await sendRefundCompletedEmail(claimed, booking, learner);
+          }
+        }
+      } catch (err) {
+        logger.warn({ message: err.message }, 'Failed to send refund completed email');
+      }
+    }
 
     return res.status(200).json({ payment });
   } catch (error) {

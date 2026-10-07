@@ -1,10 +1,11 @@
 const Booking = require('../../models/Booking');
 const Payment = require('../../models/Payment');
+const User = require('../../models/User');
 const { env } = require('../../config/env');
 const { AppError } = require('../../utils/errors');
 const { getGateway } = require('./gateway');
 const { releaseSlotLock, slotLockKey } = require('../../controllers/booking.controller');
-const { sendBookingConfirmation } = require('../email');
+const { sendBookingConfirmation, sendRefundPendingEmail } = require('../email');
 const logger = require('../../config/logger');
 const { paymentsConfirmedTotal } = require('../../utils/metrics');
 
@@ -82,6 +83,25 @@ async function updatePaymentForRefund(payment, lateArrival = false) {
   );
   payment.status = 'refund_due';
   payment.lateArrival = lateArrival;
+
+  try {
+    const updated = await Payment.findOneAndUpdate(
+      { _id: payment._id, refundDueEmailSentAt: null },
+      { $set: { refundDueEmailSentAt: new Date() } },
+      { new: true }
+    );
+    if (updated) {
+      const [learner, booking] = await Promise.all([
+        User.findById(payment.learnerId),
+        Booking.findById(payment.bookingId)
+      ]);
+      if (learner && booking) {
+        await sendRefundPendingEmail(updated, booking, learner);
+      }
+    }
+  } catch (err) {
+    logger.warn({ message: err.message }, 'Failed to send refund pending email in payment service');
+  }
 }
 
 async function sendConfirmationEmail(booking) {

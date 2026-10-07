@@ -353,7 +353,12 @@ export default function MessagesPage() {
           m.clientMessageId === clientMessageId ? { ...m, status: 'failed' } : m
         )
       );
-      setMessagesError(err.message || 'Could not send message. Tap to retry.');
+      const code = err.response?.data?.error?.code || err.code;
+      if (code === 'EMAIL_NOT_VERIFIED') {
+        setMessagesError('Please verify your email address to send messages.');
+      } else {
+        setMessagesError(err.message || 'Could not send message. Tap to retry.');
+      }
     } finally {
       setSending(false);
     }

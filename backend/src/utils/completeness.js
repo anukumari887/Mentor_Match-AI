@@ -47,7 +47,41 @@ function formatMentorProfile(profile) {
   return obj;
 }
 
+async function triggerMentorAdminReviewNotification(mentorId) {
+  const User = require('../models/User');
+  const MentorProfile = require('../models/MentorProfile');
+  const { sendAdminMentorReviewEmail } = require('../services/email');
+
+  const mentorUser = await User.findById(mentorId);
+  if (!mentorUser || mentorUser.role !== 'mentor' || !mentorUser.emailVerified) {
+    return false;
+  }
+
+  const profile = await MentorProfile.findOne({ userId: mentorId });
+  if (!profile || profile.approvalStatus !== 'pending' || profile.adminNotifiedAt) {
+    return false;
+  }
+
+  const completeness = calculateMentorCompleteness(profile);
+  if (!completeness.isComplete) {
+    return false;
+  }
+
+  const claimed = await MentorProfile.findOneAndUpdate(
+    { userId: mentorId, approvalStatus: 'pending', adminNotifiedAt: null },
+    { $set: { adminNotifiedAt: new Date() } },
+    { new: true }
+  );
+
+  if (claimed) {
+    await sendAdminMentorReviewEmail(mentorUser).catch(() => {});
+    return true;
+  }
+  return false;
+}
+
 module.exports = {
   calculateMentorCompleteness,
-  formatMentorProfile
+  formatMentorProfile,
+  triggerMentorAdminReviewNotification
 };

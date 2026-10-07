@@ -5,6 +5,7 @@ const logger = require('./config/logger');
 const { connectMongoWithRetry, mongoose } = require('./config/database');
 const { connectRedisWithRetry, getRedisClient } = require('./config/redis');
 const { ensureAdminUser } = require('./services/adminSeed');
+const { migrateExistingUsersEmailVerification } = require('./services/userMigration');
 const { startBookingJobs, stopBookingJobs } = require('./services/bookingJobs');
 const { createVideoServer } = require('./socket/video');
 
@@ -20,6 +21,9 @@ async function startServer() {
 
     // 2. Seed initial admin user if not already present
     await ensureAdminUser();
+
+    // 2b. Migrate existing users for email verification
+    await migrateExistingUsersEmailVerification();
 
     // 3. Connect to Redis with retry
     await connectRedisWithRetry();

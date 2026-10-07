@@ -777,7 +777,10 @@ export default function VideoRoomPage() {
                   Check your camera and microphone
                 </h2>
                 <p className="mt-1 text-xs text-ink-muted">
-                  Test your audio and video before the session starts so everything is ready.
+                  Test your audio and video before the session starts so everything is ready.{' '}
+                  <Link to="/settings" className="text-accent underline hover:opacity-80">
+                    Check your camera and microphone in Settings
+                  </Link>
                 </p>
               </div>
 

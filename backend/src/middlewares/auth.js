@@ -60,7 +60,32 @@ function requireRole(...roles) {
   };
 }
 
+function requireEmailVerified(req, res, next) {
+  const { env } = require('../config/env');
+  const isRequired = env.EMAIL_VERIFICATION_REQUIRED !== false && env.EMAIL_VERIFICATION_REQUIRED !== 'false';
+  if (!isRequired) {
+    return next();
+  }
+  if (!req.user) {
+    return next(new AppError('Authentication required.', 401, 'UNAUTHORIZED'));
+  }
+  if (req.user.role === 'admin') {
+    return next();
+  }
+  if (!req.user.emailVerified) {
+    return next(
+      new AppError(
+        'Please verify your email address to continue.',
+        403,
+        'EMAIL_NOT_VERIFIED'
+      )
+    );
+  }
+  next();
+}
+
 module.exports = {
   requireAuth,
-  requireRole
+  requireRole,
+  requireEmailVerified
 };

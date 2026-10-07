@@ -21,6 +21,17 @@ async function seedVideoDemo() {
     process.exit(1);
   }
 
+  if (!learner.emailVerified) {
+    learner.emailVerified = true;
+    learner.emailVerifiedAt = new Date();
+    await learner.save();
+  }
+  if (!mentor.emailVerified) {
+    mentor.emailVerified = true;
+    mentor.emailVerifiedAt = new Date();
+    await mentor.save();
+  }
+
   // Idempotency: clean up previous video demo booking
   const previousDemo = await Booking.findOne({
     learnerId: learner._id,

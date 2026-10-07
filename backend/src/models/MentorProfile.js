@@ -84,6 +84,10 @@ const mentorProfileSchema = new mongoose.Schema(
     totalSessions: {
       type: Number,
       default: 0
+    },
+    adminNotifiedAt: {
+      type: Date,
+      default: null
     }
   },
   {

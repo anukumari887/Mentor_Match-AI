@@ -10,12 +10,14 @@ import { getMentorEarnings } from '../services/payments';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import { EmptyStateEarnings, IconHeaderEarnings } from '../components/Illustrations';
+import { useAuth } from '../contexts/AuthContext';
 
 function rupees(paise) {
   return `Rs. ${new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format((paise || 0) / 100)}`;
 }
 
 export default function MentorEarningsPage() {
+  const { user } = useAuth();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,16 +37,21 @@ export default function MentorEarningsPage() {
   return (
     <section className="page-wrap flex-1 py-10 sm:py-14 bg-bg text-ink transition-colors">
       <header className="mb-8 border-b border-border pb-6">
-        <p className="text-xs font-semibold tracking-wider uppercase text-accent">
-          Mentor finance
-        </p>
-        <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink flex items-center gap-2.5">
-          <IconHeaderEarnings className="w-6 h-6 text-accent shrink-0" />
-          <span>Earnings</span>
-        </h1>
-        <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
-          Net revenue from completed 1-to-1 mentoring sessions, minus the 15% platform fee.
-        </p>
+        <div className="min-w-0">
+          <p className="font-serif text-base sm:text-lg font-semibold text-ink truncate mb-1" title={user?.name || undefined}>
+            {user?.name ? `Welcome back, ${user.name}` : 'Welcome back'}
+          </p>
+          <p className="text-xs font-semibold tracking-wider uppercase text-accent">
+            Mentor finance
+          </p>
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-semibold text-ink flex items-center gap-2.5">
+            <IconHeaderEarnings className="w-6 h-6 text-accent shrink-0" />
+            <span>Earnings</span>
+          </h1>
+          <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted">
+            Net revenue from completed 1-to-1 mentoring sessions, minus the 15% platform fee.
+          </p>
+        </div>
       </header>
 
       {error && (

@@ -16,9 +16,15 @@ async function ensureAdminUser() {
         email: env.ADMIN_EMAIL.toLowerCase(),
         passwordHash,
         role: 'admin',
-        isActive: true
+        isActive: true,
+        emailVerified: true,
+        emailVerifiedAt: new Date()
       });
       logger.info(`Default admin user successfully created: ${env.ADMIN_EMAIL}`);
+    } else if (!existingAdmin.emailVerified) {
+      existingAdmin.emailVerified = true;
+      existingAdmin.emailVerifiedAt = new Date();
+      await existingAdmin.save();
     } else {
       logger.debug('Admin user already exists.');
     }

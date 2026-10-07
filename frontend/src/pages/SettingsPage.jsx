@@ -7,6 +7,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
+import CameraMicCheckCard from '../components/CameraMicCheckCard';
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -126,6 +127,9 @@ export default function SettingsPage() {
             </div>
           </div>
         </Card>
+
+        {/* Card: Camera and Microphone Check (Learner & Mentor only) */}
+        {user?.role !== 'admin' && <CameraMicCheckCard />}
 
         {/* Card 2: Change Password */}
         <Card variant="default" padding="lg">

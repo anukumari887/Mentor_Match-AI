@@ -4,19 +4,23 @@ const User = require('../models/User');
 const LearnerProfile = require('../models/LearnerProfile');
 const MentorProfile = require('../models/MentorProfile');
 const PasswordReset = require('../models/PasswordReset');
+const EmailVerification = require('../models/EmailVerification');
 const { generateToken, setAuthCookie, clearAuthCookie } = require('../utils/token');
-const { formatMentorProfile } = require('../utils/completeness');
+const { formatMentorProfile, triggerMentorAdminReviewNotification } = require('../utils/completeness');
 const {
   registerSchema,
   loginSchema,
   changePasswordSchema,
   forgotPasswordSchema,
-  resetPasswordSchema
+  resetPasswordSchema,
+  verifyEmailSchema
 } = require('../validations/auth.validation');
 const {
   sendPasswordChangedEmail,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendVerificationEmail
 } = require('../services/email');
+const { validateRegistrationEmail } = require('../utils/emailValidation');
 const { AppError } = require('../utils/errors');
 const logger = require('../config/logger');
 
@@ -24,6 +28,9 @@ async function register(req, res, next) {
   try {
     const validatedData = registerSchema.parse(req.body);
     const { name, email, password, role } = validatedData;
+
+    // Production-only DNS MX check and disposable email blocklist
+    await validateRegistrationEmail(email, process.env.NODE_ENV === 'production');
 
     // Check if email already registered
     const existingUser = await User.findOne({ email });
@@ -34,14 +41,15 @@ async function register(req, res, next) {
     // Hash password with bcryptjs cost 12
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create user record
+    // Create user record with emailVerified: false
     const user = await User.create({
       name,
       email,
       passwordHash,
       role,
       isActive: true,
-      tokenVersion: 0
+      tokenVersion: 0,
+      emailVerified: false
     });
 
     // Create corresponding empty profile
@@ -52,6 +60,22 @@ async function register(req, res, next) {
       profile = await MentorProfile.create({ userId: user._id });
       profile = formatMentorProfile(profile);
     }
+
+    // Issue email verification token (32 bytes hex, stored only as SHA-256 hash)
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await EmailVerification.create({
+      userId: user._id,
+      tokenHash,
+      expiresAt
+    });
+
+    // Send verification email in background; never block registration if email fails
+    sendVerificationEmail(user, verificationToken).catch((error) => {
+      logger.warn({ message: error.message }, 'Failed to send verification email on registration');
+    });
 
     // Generate JWT and set secure cookie
     const token = generateToken({
@@ -67,7 +91,8 @@ async function register(req, res, next) {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        emailVerified: false
       },
       profile
     });
@@ -120,7 +145,8 @@ async function login(req, res, next) {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        emailVerified: Boolean(user.emailVerified)
       },
       profile
     });
@@ -157,7 +183,8 @@ async function getMe(req, res, next) {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        emailVerified: Boolean(user.emailVerified)
       },
       profile
     });
@@ -344,6 +371,115 @@ async function resetPassword(req, res, next) {
   }
 }
 
+async function verifyEmail(req, res, next) {
+  try {
+    const { token } = verifyEmailSchema.parse(req.body);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const record = await EmailVerification.findOne({ tokenHash });
+    const now = new Date();
+
+    if (!record || record.usedAt || record.expiresAt < now) {
+      return res.status(400).json({
+        error: {
+          code: 'INVALID_OR_EXPIRED_TOKEN',
+          message: 'This verification link is invalid or has expired. Please request a new one.',
+          details: []
+        }
+      });
+    }
+
+    const user = await User.findById(record.userId);
+    if (!user) {
+      return res.status(400).json({
+        error: {
+          code: 'INVALID_OR_EXPIRED_TOKEN',
+          message: 'This verification link is invalid or has expired. Please request a new one.',
+          details: []
+        }
+      });
+    }
+
+    // Mark token used
+    record.usedAt = now;
+    await record.save();
+
+    // Update user if not yet verified
+    if (!user.emailVerified) {
+      user.emailVerified = true;
+      user.emailVerifiedAt = now;
+      await user.save();
+
+      // If mentor, trigger admin notification if profile is complete and not yet notified
+      if (user.role === 'mentor') {
+        try {
+          await triggerMentorAdminReviewNotification(user._id);
+        } catch (err) {
+          logger.warn({ err: err.message }, 'Failed to trigger mentor review notification upon email verification');
+        }
+      }
+    }
+
+    return res.status(200).json({
+      message: 'Email verified successfully.'
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function resendVerification(req, res, next) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return next(new AppError('User not found.', 404, 'NOT_FOUND'));
+    }
+
+    // If already verified, succeed quietly with standard message
+    if (user.emailVerified) {
+      return res.status(200).json({
+        message: 'Verification link sent. Please check your inbox.'
+      });
+    }
+
+    // 60-second wait between sends
+    const recent = await EmailVerification.findOne({ userId: user._id }).sort({ createdAt: -1 });
+    if (recent && (Date.now() - recent.createdAt.getTime() < 60000)) {
+      return res.status(429).json({
+        error: {
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Please wait before requesting another verification email.',
+          details: []
+        }
+      });
+    }
+
+    // Delete earlier unused tokens
+    await EmailVerification.deleteMany({ userId: user._id, usedAt: null });
+
+    // Generate new token
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await EmailVerification.create({
+      userId: user._id,
+      tokenHash,
+      expiresAt
+    });
+
+    sendVerificationEmail(user, token).catch((error) => {
+      logger.warn({ message: error.message }, 'Failed to resend verification email');
+    });
+
+    return res.status(200).json({
+      message: 'Verification link sent. Please check your inbox.'
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -352,5 +488,7 @@ module.exports = {
   changePassword,
   logoutAll,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  verifyEmail,
+  resendVerification
 };

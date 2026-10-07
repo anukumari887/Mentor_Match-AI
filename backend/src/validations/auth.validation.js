@@ -47,6 +47,10 @@ const resetPasswordSchema = z.object({
   newPassword: passwordValidator
 }).strict();
 
+const verifyEmailSchema = z.object({
+  token: z.string().trim().min(1, 'Verification token is required')
+}).strict();
+
 module.exports = {
   passwordValidator,
   registerSchema,
@@ -54,5 +58,6 @@ module.exports = {
   changePasswordSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
   COMMON_PASSWORDS
 };

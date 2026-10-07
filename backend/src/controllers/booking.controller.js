@@ -8,7 +8,8 @@ const { env } = require('../config/env');
 const { getRedisClient, isRedisConnected } = require('../config/redis');
 const logger = require('../config/logger');
 const { bookingsCreatedTotal } = require('../utils/metrics');
-const { sendBookingCancellation } = require('../services/email');
+const { sendBookingCancellation, sendRefundPendingEmail } = require('../services/email');
+const { generateIcsCalendar } = require('../utils/calendar');
 const { generateSlots } = require('../services/slots');
 const {
   bookingIdSchema,
@@ -162,9 +163,14 @@ async function createBooking(req, res, next) {
 
 async function listBookings(req, res, next) {
   try {
-    const { status } = bookingQuerySchema.parse(req.query);
+    const { status, from, to } = bookingQuerySchema.parse(req.query);
     const filter = participantFilter(req.user);
     if (status) filter.status = status;
+    if (from || to) {
+      filter.startTime = {};
+      if (from) filter.startTime.$gte = new Date(from);
+      if (to) filter.startTime.$lte = new Date(to);
+    }
     const bookings = await Booking.find(filter)
       .sort({ startTime: 1 })
       .populate('learnerId', 'name')
@@ -318,10 +324,34 @@ async function cancelBooking(req, res, next) {
       if (payment) {
         const hoursUntilStart = (new Date(existing.startTime).getTime() - now.getTime()) / (60 * 60 * 1000);
         const refundDue = req.user.role === 'mentor' || hoursUntilStart >= env.FREE_CANCEL_HOURS;
-        await Payment.updateOne(
-          { _id: payment._id, status: 'paid' },
-          refundDue ? { $set: { status: 'refund_due' } } : { $set: { earned: true } }
-        );
+        if (refundDue) {
+          await Payment.updateOne(
+            { _id: payment._id, status: 'paid' },
+            { $set: { status: 'refund_due' } }
+          );
+          if (Payment.findOneAndUpdate) {
+            try {
+              const updatedPayment = await Payment.findOneAndUpdate(
+                { _id: payment._id, status: 'refund_due', refundDueEmailSentAt: null },
+                { $set: { refundDueEmailSentAt: new Date() } },
+                { new: true }
+              );
+              if (updatedPayment) {
+                const learner = await User.findById(existing.learnerId);
+                if (learner) {
+                  await sendRefundPendingEmail(updatedPayment, existing, learner);
+                }
+              }
+            } catch (err) {
+              logger.warn({ message: err.message }, 'Failed to send refund pending email');
+            }
+          }
+        } else {
+          await Payment.updateOne(
+            { _id: payment._id, status: 'paid' },
+            { $set: { earned: true } }
+          );
+        }
       }
       const recipientId = req.user.role === 'learner' ? existing.mentorId : existing.learnerId;
       await sendBookingCancellation(booking, recipientId);
@@ -329,6 +359,41 @@ async function cancelBooking(req, res, next) {
 
     await releaseSlotLock(slotLockKey(booking.mentorId, booking.startTime), booking._id);
     return res.status(200).json({ booking });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function getBookingCalendarIcs(req, res, next) {
+  try {
+    const { id } = bookingIdSchema.parse(req.params);
+    const booking = await Booking.findOne({ _id: id, ...participantFilter(req.user) })
+      .populate('learnerId', 'name')
+      .populate('mentorId', 'name')
+      .lean();
+
+    if (!booking) {
+      return next(new AppError('Booking not found.', 404, 'BOOKING_NOT_FOUND'));
+    }
+
+    if (!['confirmed', 'completed'].includes(booking.status)) {
+      return next(new AppError('Calendar event is only available for confirmed or completed bookings.', 404, 'CALENDAR_UNAVAILABLE'));
+    }
+
+    const isLearner = String(req.user._id) === String(booking.learnerId?._id || booking.learnerId);
+    const otherPersonName = isLearner
+      ? (booking.mentorId?.name || 'Mentor')
+      : (booking.learnerId?.name || 'Learner');
+
+    const icsContent = generateIcsCalendar({
+      booking,
+      otherPersonName
+    });
+
+    const safeFileName = `${id}.ics`;
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFileName}"`);
+    return res.status(200).send(icsContent);
   } catch (error) {
     return next(error);
   }
@@ -342,6 +407,7 @@ module.exports = {
   getRoomDetails,
   updateMeetingLink,
   cancelBooking,
+  getBookingCalendarIcs,
   slotLockKey,
   acquireSlotLock,
   releaseSlotLock

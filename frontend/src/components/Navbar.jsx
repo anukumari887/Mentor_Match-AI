@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUnreadCount } from '../services/chat';
-import { getChatSocket } from '../services/socket';
 import ThemeMenu from './ThemeMenu';
 import Avatar from './Avatar';
 import Logo from './Logo';
@@ -39,9 +38,9 @@ export default function Navbar() {
     const fetchUnread = () => {
       getUnreadCount()
         .then((data) => {
-          if (active && typeof data?.unreadCount === 'number') {
-            setUnreadCount(data.unreadCount);
-          }
+          if (!active) return;
+          const count = typeof data === 'number' ? data : (typeof data?.unreadCount === 'number' ? data.unreadCount : 0);
+          setUnreadCount(count);
         })
         .catch(() => {});
     };
@@ -49,20 +48,20 @@ export default function Navbar() {
     fetchUnread();
     const intervalId = setInterval(fetchUnread, 60000);
 
-    const socket = getChatSocket();
-    const handleChatMessage = () => fetchUnread();
-    const handleChatRead = () => fetchUnread();
-    const handleCustomUpdate = () => fetchUnread();
+    const handleCustomUpdate = (event) => {
+      const count = typeof event?.detail === 'number' ? event.detail : event?.detail?.unreadCount;
+      if (typeof count === 'number') {
+        setUnreadCount(count);
+      } else {
+        fetchUnread();
+      }
+    };
 
-    socket.on('chat:message', handleChatMessage);
-    socket.on('chat:read', handleChatRead);
     window.addEventListener('chat:unread-changed', handleCustomUpdate);
 
     return () => {
       active = false;
       clearInterval(intervalId);
-      socket.off('chat:message', handleChatMessage);
-      socket.off('chat:read', handleChatRead);
       window.removeEventListener('chat:unread-changed', handleCustomUpdate);
     };
   }, [user]);
@@ -192,7 +191,10 @@ export default function Navbar() {
                 >
                   <MessageSquare size={13} /> Messages
                   {unreadCount > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[15px] h-3.5 px-0.5 text-[9px] font-bold leading-none rounded-full bg-accent text-accent-text">
+                    <span
+                      className="inline-flex items-center justify-center min-w-[15px] h-3.5 px-1 text-[9px] font-bold leading-none rounded-full bg-danger text-white shrink-0"
+                      aria-label={`${unreadCount} unread message${unreadCount === 1 ? '' : 's'}`}
+                    >
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -372,7 +374,10 @@ export default function Navbar() {
                       <MessageSquare size={14} /> Messages
                     </span>
                     {unreadCount > 0 && (
-                      <span className="inline-flex items-center justify-center min-w-[18px] h-4 px-1 text-[10px] font-bold leading-none rounded-full bg-accent text-accent-text">
+                      <span
+                        className="inline-flex items-center justify-center min-w-[18px] h-4 px-1 text-[10px] font-bold leading-none rounded-full bg-danger text-white shrink-0"
+                        aria-label={`${unreadCount} unread message${unreadCount === 1 ? '' : 's'}`}
+                      >
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}

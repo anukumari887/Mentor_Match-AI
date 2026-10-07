@@ -33,6 +33,13 @@ const userSchema = new mongoose.Schema(
     },
     passwordChangedAt: {
       type: Date
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false
+    },
+    emailVerifiedAt: {
+      type: Date
     }
   },
   {

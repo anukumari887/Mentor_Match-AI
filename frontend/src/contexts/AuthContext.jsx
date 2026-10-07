@@ -47,8 +47,19 @@ export function AuthProvider({ children }) {
 
   const updateProfile = (nextProfile) => setProfile(nextProfile);
 
+  const refreshUser = async () => {
+    try {
+      const { data } = await api.get('/api/auth/me');
+      setUser(data.user);
+      setProfile(data.profile);
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading, login, register, logout, updateProfile, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
@@ -56,6 +67,5 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used inside AuthProvider');
-  return context;
+  return context || { user: null, profile: null, loading: false };
 }

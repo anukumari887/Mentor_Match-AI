@@ -124,7 +124,12 @@ export default function CheckoutPage() {
       });
       checkout.open();
     } catch (requestError) {
-      setPaymentError(requestError.message || 'Payment could not be started.');
+      const code = requestError.response?.data?.error?.code || requestError.code;
+      if (code === 'EMAIL_NOT_VERIFIED') {
+        setPaymentError('Please verify your email address before completing payment.');
+      } else {
+        setPaymentError(requestError.message || 'Payment could not be started.');
+      }
       setPaymentLoading(false);
     }
   };
@@ -136,7 +141,12 @@ export default function CheckoutPage() {
       const result = await confirmMockPayment(bookingId);
       applyPaymentResult(result);
     } catch (requestError) {
-      setPaymentError(requestError.message || 'Test payment could not be confirmed.');
+      const code = requestError.response?.data?.error?.code || requestError.code;
+      if (code === 'EMAIL_NOT_VERIFIED') {
+        setPaymentError('Please verify your email address before completing payment.');
+      } else {
+        setPaymentError(requestError.message || 'Test payment could not be confirmed.');
+      }
     } finally {
       setPaymentLoading(false);
     }

@@ -126,6 +126,25 @@ const chatConversationLimiter = createLimiter(
   }
 );
 
+// 10 attempts per 15 minutes per IP for email verification
+const verifyEmailLimiter = createLimiter(
+  15 * 60 * 1000,
+  10,
+  'Too many verification attempts from this IP. Please try again after 15 minutes.',
+  { prefix: 'rl:ve:' }
+);
+
+// 3 attempts per hour per user for resending verification email
+const resendVerificationLimiter = createLimiter(
+  60 * 60 * 1000,
+  3,
+  'Too many resend verification requests. Please try again after 1 hour.',
+  {
+    prefix: 'rl:rv:',
+    keyGenerator: (req) => req.user?._id ? String(req.user._id) : (req.ip || 'unknown')
+  }
+);
+
 module.exports = {
   authLimiter,
   paymentLimiter,
@@ -135,5 +154,7 @@ module.exports = {
   forgotPasswordEmailLimiter,
   resetPasswordLimiter,
   chatUserLimiter,
-  chatConversationLimiter
+  chatConversationLimiter,
+  verifyEmailLimiter,
+  resendVerificationLimiter
 };

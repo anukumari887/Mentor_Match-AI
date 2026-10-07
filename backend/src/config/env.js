@@ -42,6 +42,15 @@ const envSchema = z.object({
 
   METRICS_TOKEN: z.string().optional().default(''),
   CHAT_VALIDITY_DAYS: z.coerce.number().int().min(1).max(90).default(7),
+  CHAT_EMAIL_THROTTLE_MINUTES: z.coerce.number().int().min(1).max(120).default(10),
+  EMAIL_VERIFICATION_REQUIRED: z.preprocess((val) => {
+    if (typeof val === 'boolean') return val;
+    if (typeof val === 'string') {
+      if (val.toLowerCase() === 'false' || val === '0') return false;
+      if (val.toLowerCase() === 'true' || val === '1') return true;
+    }
+    return val;
+  }, z.boolean()).default(true),
   VITE_API_URL: z.string().optional().default('http://localhost:5000'),
   PUBLIC_APP_URL: z.string().url().default('http://localhost:3000')
 });

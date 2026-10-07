@@ -44,6 +44,8 @@ All production secrets should be set in `.env` (Path A) or AWS Secrets Manager (
 | `SMTP_PASS` | SMTP password / API token | Provider API key |
 | `EMAIL_FROM` | Verified sender address | `"Mentor-Match AI" <notifications@mentormatch.example.com>` |
 | `PUBLIC_APP_URL` | Canonical frontend web URL | `https://mentormatch.example.com` (Used for password reset links & emails; startup rejects localhost in production) |
+| `EMAIL_VERIFICATION_REQUIRED` | Block unverified users from bookings, payments, and messaging | `true` (default: `true`, set to `false` for emergency SMTP bypass) |
+| `CHAT_EMAIL_THROTTLE_MINUTES` | Minimum minutes between offline email alerts per conversation | `10` (default: `10`, range: `1` to `120`) |
 | `ML_SERVICE_URL` | URL to reach ML container | `http://ml-service:8000` (internal network) |
 | `ML_TIMEOUT_MS` | Fallback timeout for recommendations | `3000` (milliseconds) |
 

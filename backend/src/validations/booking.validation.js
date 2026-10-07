@@ -10,8 +10,21 @@ const createBookingSchema = z.object({
 }).strict();
 
 const bookingQuerySchema = z.object({
-  status: z.enum(['pending', 'confirmed', 'completed', 'cancelled', 'expired']).optional()
-}).strict();
+  status: z.enum(['pending', 'confirmed', 'completed', 'cancelled', 'expired']).optional(),
+  from: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid from date.' }).optional(),
+  to: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid to date.' }).optional()
+}).strict().refine((data) => {
+  if (data.from && data.to) {
+    const fromDate = new Date(data.from);
+    const toDate = new Date(data.to);
+    if (toDate < fromDate) return false;
+    const diffDays = (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDays > 100) return false;
+  }
+  return true;
+}, {
+  message: 'Date range cannot exceed 100 days, and "to" must be after or equal to "from".'
+});
 
 const cancelBookingSchema = z.object({
   reason: z.string().trim().max(500).optional()

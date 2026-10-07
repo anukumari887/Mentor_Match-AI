@@ -41,9 +41,9 @@ describe('Learner-Mentor Chat API', () => {
   const strangerId = '507f1f77bcf86cd799439013';
   const convId = '507f1f77bcf86cd799439099';
 
-  const learnerUser = { _id: learnerId, name: 'Alice Learner', email: 'learner01@mentormatch.local', role: 'learner', isActive: true, tokenVersion: 0 };
-  const mentorUser = { _id: mentorId, name: 'Bob Mentor', email: 'mentor01@mentormatch.local', role: 'mentor', isActive: true, tokenVersion: 0 };
-  const strangerUser = { _id: strangerId, name: 'Eve Stranger', email: 'stranger@mentormatch.local', role: 'learner', isActive: true, tokenVersion: 0 };
+  const learnerUser = { _id: learnerId, name: 'Alice Learner', email: 'learner01@mentormatch.local', role: 'learner', isActive: true, emailVerified: true, tokenVersion: 0 };
+  const mentorUser = { _id: mentorId, name: 'Bob Mentor', email: 'mentor01@mentormatch.local', role: 'mentor', isActive: true, emailVerified: true, tokenVersion: 0 };
+  const strangerUser = { _id: strangerId, name: 'Eve Stranger', email: 'stranger@mentormatch.local', role: 'learner', isActive: true, emailVerified: true, tokenVersion: 0 };
 
   beforeEach(() => {
     jest.clearAllMocks();

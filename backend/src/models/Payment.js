@@ -16,7 +16,9 @@ const paymentSchema = new mongoose.Schema({
   earned: { type: Boolean, default: false },
   paidAt: Date,
   refundedAt: Date,
-  refundReference: { type: String, default: '' }
+  refundReference: { type: String, default: '' },
+  refundDueEmailSentAt: Date,
+  refundedEmailSentAt: Date
 }, { timestamps: true });
 
 paymentSchema.index({ learnerId: 1, createdAt: -1 });

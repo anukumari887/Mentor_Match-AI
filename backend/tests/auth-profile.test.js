@@ -19,6 +19,18 @@ jest.mock('../src/models/MentorProfile', () => ({
   create: jest.fn()
 }));
 
+jest.mock('../src/models/EmailVerification', () => ({
+  findOne: jest.fn(),
+  create: jest.fn().mockResolvedValue({}),
+  deleteMany: jest.fn().mockResolvedValue({})
+}));
+
+jest.mock('../src/services/email', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(true),
+  sendPasswordChangedEmail: jest.fn().mockResolvedValue(true),
+  sendPasswordResetEmail: jest.fn().mockResolvedValue(true)
+}));
+
 jest.mock('../src/utils/token', () => ({
   COOKIE_NAME: 'token',
   verifyToken: jest.fn(),
@@ -112,6 +124,7 @@ describe('Authentication and profile contracts', () => {
       email: 'anu@example.com',
       role: 'learner',
       isActive: true,
+      emailVerified: true,
       passwordHash: 'password-hash'
     };
     const profile = { userId: 'learner-id' };

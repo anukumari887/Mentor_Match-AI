@@ -5,6 +5,7 @@ const COOKIE_NAME = 'token';
 
 // Convert string like "7d" or "24h" to milliseconds
 function parseExpiryToMs(expiryStr) {
+  if (!expiryStr || typeof expiryStr !== 'string') return 7 * 24 * 60 * 60 * 1000;
   const match = expiryStr.match(/^(\d+)([dhms])$/);
   if (!match) return 7 * 24 * 60 * 60 * 1000;
   const num = parseInt(match[1], 10);
@@ -23,18 +24,22 @@ function parseExpiryToMs(expiryStr) {
   }
 }
 
+function getJwtSecret() {
+  return env.JWT_SECRET || 'dev_jwt_secret_must_be_at_least_32_chars_long!';
+}
+
 function generateToken(payload) {
   const tokenPayload = {
     ...payload,
     tv: payload.tv !== undefined ? payload.tv : 0
   };
-  return jwt.sign(tokenPayload, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN
+  return jwt.sign(tokenPayload, getJwtSecret(), {
+    expiresIn: env.JWT_EXPIRES_IN || '7d'
   });
 }
 
 function verifyToken(token) {
-  return jwt.verify(token, env.JWT_SECRET);
+  return jwt.verify(token, getJwtSecret());
 }
 
 function setAuthCookie(res, token) {

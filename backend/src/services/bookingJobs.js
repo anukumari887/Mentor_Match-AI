@@ -64,6 +64,45 @@ async function completePastBookings(now = new Date()) {
   return completedCount;
 }
 
+async function send24hReminders(now = new Date()) {
+  const until = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const upcoming = await Booking.find({
+    status: 'confirmed',
+    reminder24hSent: false,
+    startTime: { $gt: now, $lte: until }
+  }).select('_id learnerId mentorId startTime createdAt').lean();
+  let reminderCount = 0;
+
+  for (const booking of upcoming) {
+    // Do not send 24h reminder if booking was created less than 24h before start
+    const createdAtTime = booking.createdAt ? new Date(booking.createdAt).getTime() : 0;
+    const startTimeTime = new Date(booking.startTime).getTime();
+    if (createdAtTime && startTimeTime - createdAtTime < 24 * 60 * 60 * 1000) {
+      await Booking.updateOne({ _id: booking._id }, { $set: { reminder24hSent: true } });
+      continue;
+    }
+
+    const claimed = await Booking.findOneAndUpdate(
+      { _id: booking._id, status: 'confirmed', reminder24hSent: false },
+      { $set: { reminder24hSent: true } },
+      { new: false }
+    );
+    if (!claimed) continue;
+
+    const [learner, mentor] = await Promise.all([
+      User.findById(booking.learnerId).select('name email').lean(),
+      User.findById(booking.mentorId).select('name email').lean()
+    ]);
+
+    const sends = [];
+    if (learner) sends.push(sendSessionReminder(booking, learner, mentor?.name || 'Mentor', 24));
+    if (mentor) sends.push(sendSessionReminder(booking, mentor, learner?.name || 'Learner', 24));
+    await Promise.all(sends);
+    reminderCount++;
+  }
+  return reminderCount;
+}
+
 async function sendUpcomingReminders(now = new Date()) {
   const until = new Date(now.getTime() + 60 * 60 * 1000);
   const upcoming = await Booking.find({
@@ -80,10 +119,16 @@ async function sendUpcomingReminders(now = new Date()) {
       { new: false }
     );
     if (!claimed) continue;
-    const recipients = await User.find({ _id: { $in: [booking.learnerId, booking.mentorId] } })
-      .select('name email')
-      .lean();
-    await Promise.all(recipients.map((recipient) => sendSessionReminder(booking, recipient)));
+
+    const [learner, mentor] = await Promise.all([
+      User.findById(booking.learnerId).select('name email').lean(),
+      User.findById(booking.mentorId).select('name email').lean()
+    ]);
+
+    const sends = [];
+    if (learner) sends.push(sendSessionReminder(booking, learner, mentor?.name || 'Mentor', 1));
+    if (mentor) sends.push(sendSessionReminder(booking, mentor, learner?.name || 'Learner', 1));
+    await Promise.all(sends);
     reminderCount++;
   }
   return reminderCount;
@@ -92,6 +137,7 @@ async function sendUpcomingReminders(now = new Date()) {
 async function runBookingJobs(now = new Date()) {
   await expirePendingBookings(now);
   await completePastBookings(now);
+  await send24hReminders(now);
   await sendUpcomingReminders(now);
 }
 
@@ -113,6 +159,7 @@ module.exports = {
   expirePendingBookings,
   completePastBookings,
   sendUpcomingReminders,
+  send24hReminders,
   runBookingJobs,
   startBookingJobs,
   stopBookingJobs

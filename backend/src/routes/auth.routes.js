@@ -6,7 +6,9 @@ const {
   changePasswordLimiter,
   forgotPasswordIpLimiter,
   forgotPasswordEmailLimiter,
-  resetPasswordLimiter
+  resetPasswordLimiter,
+  verifyEmailLimiter,
+  resendVerificationLimiter
 } = require('../middlewares/rateLimiter');
 
 const router = express.Router();
@@ -15,6 +17,10 @@ router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
 router.post('/logout', authController.logout);
 router.get('/me', requireAuth, authController.getMe);
+
+// Email verification
+router.post('/verify-email', verifyEmailLimiter, authController.verifyEmail);
+router.post('/resend-verification', requireAuth, resendVerificationLimiter, authController.resendVerification);
 
 // Password settings & lifecycle
 router.post('/change-password', requireAuth, changePasswordLimiter, authController.changePassword);

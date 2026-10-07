@@ -34,7 +34,14 @@ export default function AuthPage({ mode }) {
         navigate(location.state?.from?.pathname || '/profile', { replace: true });
       }
     } catch (requestError) {
-      setError(requestError.message || 'We could not complete your request. Please try again.');
+      const code = requestError.response?.data?.error?.code || requestError.code;
+      if (code === 'EMAIL_DOMAIN_INVALID') {
+        setError('This email address looks wrong. Please check it, or use a different one.');
+      } else if (code === 'EMAIL_NOT_VERIFIED') {
+        setError('Please verify your email address to continue.');
+      } else {
+        setError(requestError.message || 'We could not complete your request. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -139,6 +146,11 @@ export default function AuthPage({ mode }) {
               type="email"
               value={form.email}
             />
+            {isRegister && (
+              <p className="mt-1.5 text-xs text-ink-muted">
+                We will send you a link to confirm this email.
+              </p>
+            )}
           </div>
 
           <div>

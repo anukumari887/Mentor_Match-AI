@@ -17,6 +17,8 @@ import {
   IconHeaderRecommendations
 } from '../components/Illustrations';
 
+import { useAuth } from '../contexts/AuthContext';
+
 function rupees(value) {
   return `₹${new Intl.NumberFormat('en-IN').format(value)}`;
 }
@@ -33,6 +35,7 @@ function localTime(value) {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [recommendations, setRecommendations] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +66,10 @@ export default function DashboardPage() {
     <section className="page-wrap flex-1 py-10 sm:py-14 bg-bg text-ink transition-colors">
       {/* Dashboard Header */}
       <header className="mb-8 border-b border-border pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
+        <div className="min-w-0">
+          <p className="font-serif text-base sm:text-lg font-semibold text-ink truncate mb-1" title={user?.name || undefined}>
+            {user?.name ? `Welcome back, ${user.name}` : 'Welcome back'}
+          </p>
           <p className="text-xs font-semibold tracking-wider uppercase text-accent">
             Learner dashboard
           </p>

@@ -35,11 +35,11 @@ The application functions fully in development using local containers, mock paym
 
 ---
 
-## 2. Production Transactional Email Service
+## 2. Production Transactional Email Service (CRITICAL REQUIREMENT)
+- [ ] **Verified Sender Domain, SPF, DKIM & DMARC (Mandatory Pre-Launch):**
+  - **CRITICAL:** Real transactional email sending with a verified sender domain, SPF, DKIM, and DMARC records is **MANDATORY** before public launch. Because `EMAIL_VERIFICATION_REQUIRED=true` by default, new learners and mentors **cannot book sessions, make payments, or send chat messages** until clicking their single-use email verification link. Unreliable email delivery directly blocks user onboarding and revenue.
+  - Add DNS TXT (SPF), CNAME (DKIM), and TXT `_dmarc` (DMARC) records to ensure maximum inbox delivery and avoid spam folders.
 - [ ] **Select Production SMTP Provider:** (e.g., AWS SES, Resend, SendGrid, Postmark).
-- [ ] **Domain Verification & SPF / DKIM Records:**
-  - Add DNS TXT and CNAME records to verify domain ownership.
-  - Set up DMARC policy (`p=none` or `p=quarantine`) to prevent emails landing in spam.
 - [ ] **Configure Production Environment Variables:**
   ```ini
   SMTP_HOST=email-smtp.us-east-1.amazonaws.com
@@ -49,7 +49,18 @@ The application functions fully in development using local containers, mock paym
   SMTP_PASS=your_smtp_password
   EMAIL_FROM="Mentor-Match AI <notifications@yourdomain.com>"
   PUBLIC_APP_URL=https://yourdomain.com
+  EMAIL_VERIFICATION_REQUIRED=true
+  CHAT_EMAIL_THROTTLE_MINUTES=10
   ```
+- [ ] **Emergency Bypass Procedure (`EMAIL_VERIFICATION_REQUIRED=false`):**
+  - If the transactional email provider suffers an outage or DNS deliverability degrades:
+    1. Update environment in production:
+       ```ini
+       EMAIL_VERIFICATION_REQUIRED=false
+       ```
+    2. Restart backend: `docker compose restart backend`
+    3. All unverified user booking/payment/chat blockers are instantly deactivated across the application without code changes or redeployments.
+    4. Once the SMTP service recovers, re-enable `EMAIL_VERIFICATION_REQUIRED=true` and restart the backend.
 - [ ] **Send Verification Email:** Trigger a test registration or booking and verify recipient inbox delivery.
 - [ ] **Verify Password Reset Email Delivery:** Real transactional email delivery must be operational in production for the password reset workflow (`/forgot-password` -> `/reset-password`) and account security alert notifications ("Your password was changed") to reach end users. Password reset links are generated strictly against `PUBLIC_APP_URL`.
 

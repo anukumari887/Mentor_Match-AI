@@ -49,3 +49,18 @@ export async function cancelBooking(id, reason = '') {
   const { data } = await api.patch(`/api/bookings/${id}/cancel`, { reason });
   return data.booking;
 }
+
+export async function downloadBookingIcs(id) {
+  const response = await api.get(`/api/bookings/${id}/calendar.ics`, {
+    responseType: 'blob'
+  });
+  const blob = new Blob([response.data], { type: 'text/calendar;charset=utf-8' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `session-${id}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}

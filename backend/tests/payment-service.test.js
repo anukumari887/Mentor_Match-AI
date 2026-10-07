@@ -13,6 +13,11 @@ jest.mock('../src/models/Payment', () => ({
   create: jest.fn()
 }));
 
+jest.mock('../src/models/User', () => ({
+  findById: jest.fn().mockResolvedValue({ _id: '507f1f77bcf86cd799439012', name: 'Learner', email: 'learner@example.com' }),
+  findOne: jest.fn()
+}));
+
 jest.mock('../src/services/payments/gateway', () => ({ getGateway: jest.fn() }));
 jest.mock('../src/config/env', () => ({ env: {
   PAYMENT_MODE: 'mock',
@@ -27,7 +32,7 @@ jest.mock('../src/controllers/booking.controller', () => ({
   slotLockKey: jest.fn(() => 'test-lock'),
   releaseSlotLock: jest.fn()
 }));
-jest.mock('../src/services/email', () => ({ sendBookingConfirmation: jest.fn() }));
+jest.mock('../src/services/email', () => ({ sendBookingConfirmation: jest.fn(), sendRefundPendingEmail: jest.fn() }));
 
 const Booking = require('../src/models/Booking');
 const Payment = require('../src/models/Payment');

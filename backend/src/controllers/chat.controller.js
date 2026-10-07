@@ -5,6 +5,7 @@ const { getChatAccess } = require('../services/chatAccess');
 const { sendChatMessageEmail } = require('../services/email');
 const { chatMessagesTotal } = require('../utils/metrics');
 const { AppError } = require('../utils/errors');
+const { env } = require('../config/env');
 const logger = require('../config/logger');
 const { getIo } = require('../socket/video');
 const {
@@ -333,15 +334,16 @@ async function sendMessage(req, res, next) {
 
     if (!recipientHasSockets) {
       const emailField = isLearner ? 'mentorEmailNotifiedAt' : 'learnerEmailNotifiedAt';
-      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+      const throttleMinutes = env.CHAT_EMAIL_THROTTLE_MINUTES || 10;
+      const throttleThreshold = new Date(Date.now() - throttleMinutes * 60 * 1000);
 
-      // Atomic rate limit: at most one email per conversation per recipient every 30 minutes
+      // Atomic rate limit: at most one email per conversation per recipient every CHAT_EMAIL_THROTTLE_MINUTES
       const updatedConv = await Conversation.findOneAndUpdate(
         {
           _id: id,
           $or: [
             { [emailField]: null },
-            { [emailField]: { $lt: thirtyMinutesAgo } }
+            { [emailField]: { $lt: throttleThreshold } }
           ]
         },
         { $set: { [emailField]: new Date() } },
@@ -357,7 +359,8 @@ async function sendMessage(req, res, next) {
               sendChatMessageEmail({
                 recipient,
                 senderName: req.user.name,
-                conversationId: id
+                conversationId: id,
+                messageText: sanitizedBody
               }).catch((err) => {
                 logger.warn({ message: err.message }, 'Failed to send chat message email');
               });

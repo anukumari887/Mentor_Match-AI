@@ -96,7 +96,12 @@ export default function MentorDetailPage() {
       const convId = conv?._id || conv?.conversation?._id;
       navigate(`/messages/${convId}`);
     } catch (requestError) {
-      setBookingError(requestError.message || 'Could not start conversation with mentor.');
+      const code = requestError.response?.data?.error?.code || requestError.code;
+      if (code === 'EMAIL_NOT_VERIFIED') {
+        setBookingError('Please verify your email address to message mentors.');
+      } else {
+        setBookingError(requestError.message || 'Could not start conversation with mentor.');
+      }
     } finally {
       setChatStarting(false);
     }
@@ -109,7 +114,12 @@ export default function MentorDetailPage() {
       const booking = await createBooking({ mentorId: id, startTime: slot.startTime });
       navigate(`/checkout/${booking._id}`);
     } catch (requestError) {
-      setBookingError(requestError.message || 'This session could not be held. Please choose another time.');
+      const code = requestError.response?.data?.error?.code || requestError.code;
+      if (code === 'EMAIL_NOT_VERIFIED') {
+        setBookingError('Please verify your email address before booking sessions.');
+      } else {
+        setBookingError(requestError.message || 'This session could not be held. Please choose another time.');
+      }
       setRetry((value) => value + 1);
     } finally {
       setBookingSaving(false);

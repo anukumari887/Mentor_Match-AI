@@ -964,6 +964,162 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 | `frontend/vite.config.js` | Excluded `e2e` directory from Vitest test runner |
 | `package.json` | Root `npm run seed:video-demo` script |
 
+---
+
+## Phase: Notifications, Email Verification, Refund and Reminder Emails, Calendar, Camera Check, Dashboard Name
+
+- **Branch:** `notifications-verify-calendar`
+- **Pre-flight Component & Service Audit (Reuse Checklist):**
+  1. **Chat Notification Emails:** Existing `sendChatMessageEmail` in `backend/src/services/email.js` and recipient socket inspection in `backend/src/controllers/chat.controller.js` reused. Replaced fixed 30m throttle with `CHAT_EMAIL_THROTTLE_MINUTES` (env, default 10) and updated email content to include first 100 characters of message (HTML-escaped) with atomic `findOneAndUpdate` on `Conversation`.
+  2. **Refund Emails:** Inspected payment lifecycle. Added `refundDueEmailSentAt` and `refundedEmailSentAt` tracking to `Payment` schema; added `sendRefundPendingEmail` and `sendRefundCompletedEmail` to `backend/src/services/email.js`, using atomic `findOneAndUpdate` so no duplicates are sent.
+  3. **Session Reminders:** Inspected `backend/src/services/bookingJobs.js`. Found existing 60-minute reminder job (`sendUpcomingReminders`). Added 24-hour reminder job with atomic `reminder24hSent` tracking flag on `Booking` schema. Both jobs notify both learner and mentor with IST times, camera/mic check note, and calendar links.
+  4. **Welcome Email & Verification:** Verified no existing welcome email exists. Added `sendVerificationEmail` on registration with 24-hour crypto token hash link to `PUBLIC_APP_URL + "/verify-email?token=<token>"`.
+  5. **Settings Page:** Inspected `frontend/src/pages/SettingsPage.jsx`. Reused existing card structure and design tokens to add one new "Camera and microphone" test card for learners and mentors.
+  6. **Camera & Microphone Check:** Reused WebRTC `getUserMedia`, device enumeration, audio analyzer with `AudioContext`, error translation (`getMediaErrorMessage`), and track disposal from `frontend/src/pages/VideoRoomPage.jsx`.
+  7. **Shared Status Banner Area:** Inspected `frontend/src/components/Layout.jsx`. Reused banner area above main content to stack `<VerificationBanner />` with `<ApprovalBanner />`.
+  8. **Toast Component:** Inspected `frontend/src/components/Toast.jsx`. Reused existing polite toast implementation with `role="status"` and `aria-live="polite"`.
+- **Baseline "Before" Screenshots:** Captured across 1440px and 360px in `docs/screenshots/before-notifications/` for register, learner dashboard, mentor dashboard, admin dashboard, Settings, My sessions, and navbar (18 files).
+
+- **What was built:**
+  1. **Chat Notifications (Learner & Mentor):**
+     - Navbar Messages link red dot with unread counter (`9+` when exceeding 9) and non-color `aria-label` attribute on one line.
+     - Single app-level socket listener in `frontend/src/components/ChatNotificationListener.jsx` managing socket events and document title `(N) Mentor-Match` when tab is hidden.
+     - Non-intrusive Toast popup on new messages when not viewing thread, collapsing repeated messages within 5 seconds, displaying plain text preview (max 80 chars), and self-dismissing after 8 seconds with Escape key keyboard accessibility.
+     - Throttled offline message emails sent via Mailpit only when recipient has zero active sockets, including first 100 characters of message (HTML-escaped), regulated by `CHAT_EMAIL_THROTTLE_MINUTES` (env, default 10) and updated with atomic `findOneAndUpdate` on `Conversation`.
+  2. **Email Verification & Guardrails:**
+     - User schema updated with `emailVerified` (boolean) and optional `emailVerifiedAt` (Date).
+     - One-time idempotent startup migration (`backend/src/services/userMigration.js`) marking existing users verified so existing accounts are not locked out.
+     - `EmailVerification` collection with SHA-256 hashed token storage, unique index, and 24-hour TTL index.
+     - `POST /api/auth/verify-email`: public single-use POST endpoint (rate limit 10/15m per IP). Sets user `emailVerified=true` and marks token used.
+     - `POST /api/auth/resend-verification`: authenticated endpoint (rate limit 3/hour per user, 60s cooldown).
+     - Guardrails governed by `EMAIL_VERIFICATION_REQUIRED` (default true): blocks unverified users with 403 `EMAIL_NOT_VERIFIED` on creating bookings, creating payment orders, confirming payments, creating conversations, sending messages, and submitting mentor reviews.
+     - Production-only registration validation (`backend/src/utils/emailValidation.js`): rejects domains without MX servers (`dns.promises.resolveMx` with 3-second timeout, failing open on DNS errors/timeouts) and rejects 20+ known disposable email domains (`EMAIL_DOMAIN_INVALID`).
+     - Registration notice on frontend register form ("We will send you a link to confirm this email.").
+     - Persistent `<VerificationBanner />` in shared layout for unverified learners and mentors, showing email address, explanatory restrictions, and resend button with live 60-second countdown.
+     - New page `/verify-email`: immediate URL token scrubbing via `history.replaceState`, automated backend verification, and clear success/error action buttons.
+  3. **Refund Emails to Learner:**
+     - "Refund pending" email triggered when payment transitions to `refund_due` (mentor cancellation or learner early cancellation), marked with `refundDueEmailSentAt`.
+     - "Refund completed" email triggered when admin marks payment refunded with reference note, marked with `refundedEmailSentAt`.
+     - Atomic `findOneAndUpdate` deduplication ensures zero repeated sends.
+  4. **Session Reminders to Both Participants:**
+     - Automated 24-hour reminder job (`send24hReminders`) with atomic `reminder24hSent` tracking on `Booking`.
+     - Both 24-hour and existing 1-hour reminders notify both learner and mentor with IST times ("IST" label), camera/mic check reminders, and attached `.ics` calendar invite.
+  5. **Calendar & iCalendar Export:**
+     - `GET /api/bookings`: added optional `from` and `to` ISO date filters (max 100 days range) with participant-only authorization.
+     - `GET /api/bookings/:id/calendar.ics`: RFC 5545 iCalendar endpoint returning `text/calendar; charset=utf-8` with CRLF endings, UTC dates, 15-minute VALARM, line folding (<= 75 bytes), and sanitized booking ID filename.
+     - Frontend `List | Calendar` switch on `SessionsPage` using existing `Tabs` component.
+     - New route `/calendar`: full month grid, browser locale first-day, today highlight, session count dots, day session side/bottom list, Join button early-window enforcement, local timezone formatting, keyboard navigation, and `.ics` download button.
+  6. **Camera & Microphone Check in Settings:**
+     - Added "Camera and microphone" test card in `/settings` for learners and mentors.
+     - `getUserMedia` called strictly upon user button click; live video tile with initials fallback, animated audio volume meter, camera & mic toggle buttons, device selection diagnostics, and friendly error translation.
+     - Complete track shutdown (`track.stop()`) on Stop button click, page navigation, and component unmount.
+  7. **User Greeting on Dashboards:**
+     - Personalized "Welcome back, <name>" greeting at the top of Learner, Mentor, and Admin dashboards with truncation ellipsis, full-name title tooltip, and fallback.
+
+- **What was tested & real outputs:**
+  1. **Backend Tests (21 suites, 150 tests passed):**
+     - Command: `npm --prefix backend test`
+     - Real Output: `Test Suites: 21 passed, 21 total. Tests: 150 passed, 150 total. Snapshots: 0 total.`
+  2. **Backend Linting:**
+     - Command: `npm --prefix backend run lint`
+     - Real Output: `0 errors, 4 warnings (allowed unused vars)`
+  3. **Frontend Tests (26 files, 81 tests passed):**
+     - Command: `npm --prefix frontend test -- --run`
+     - Real Output: `Test Files: 26 passed, 26 total. Tests: 81 passed, 81 total.`
+  4. **Frontend Production Build:**
+     - Command: `npm --prefix frontend run build`
+     - Real Output: `✓ built in 11.38s` (0 errors)
+  5. **ML Service Tests (8 tests passed):**
+     - Command: `docker compose exec -T ml-service python -m pytest`
+     - Real Output: `8 passed, 1 warning in 1.86s`
+  6. **Real-User E2E Verification (`node frontend/scripts/runRealUserVerification.js`):**
+     - Command: `node frontend/scripts/runRealUserVerification.js`
+     - Real Output:
+       - Registered learner, observed verification banner and extracted single-use token from Mailpit.
+       - Verified booking creation was blocked with `403 EMAIL_NOT_VERIFIED`.
+       - Navigated to `/verify-email?token=...`, observed immediate URL token scrub, and verified email status.
+       - Tested `.ics` endpoint returning `Content-Type: text/calendar; charset=utf-8` and valid RFC 5545 payload.
+       - Captured 18 "after" baseline screenshots in `docs/screenshots/after-notifications/`.
+       - Captured 84 multi-theme screenshots across all 6 themes in `docs/screenshots/notifications/`.
+
+- **File Change Ledger (`git diff --stat main`):**
+| File | Reason |
+|---|---|
+| `.env.example` | Added `EMAIL_VERIFICATION_REQUIRED` and `CHAT_EMAIL_THROTTLE_MINUTES` |
+| `.env.production.example` | Added production templates for new env variables |
+| `PROGRESS.md` | Logged phase audit, execution, verification, test commands, and file diffs |
+| `README.md` | Documented new features, demo accounts note, and testing instructions |
+| `docs/API.md` | Documented verify-email, resend-verification, calendar query params, and .ics endpoint |
+| `docs/DEPLOYMENT.md` | Added new environment variables to production deployment guide |
+| `docs/LAUNCH_CHECKLIST.md` | Documented mandatory transactional email/SPF/DKIM/DMARC requirements and emergency bypass |
+| `docs/SECURITY_AUDIT.md` | Documented security audit table for email tokens, DNS MX checks, guardrails, and media disposal |
+| `docs/screenshots/after-notifications/` | 18 baseline after screenshots matching before-notifications |
+| `docs/screenshots/before-notifications/` | 18 baseline before screenshots (Light theme, 1440px and 360px) |
+| `docs/screenshots/notifications/` | 84 screenshots covering all 6 themes and 2 viewports for all 7 task features |
+| `backend/scripts/seed-video-demo.js` | Pre-verified seeded demo accounts (`emailVerified: true`) |
+| `backend/scripts/seed.js` | Pre-verified seeded demo learners and mentors |
+| `backend/src/config/env.js` | Added Zod validation for `EMAIL_VERIFICATION_REQUIRED` and `CHAT_EMAIL_THROTTLE_MINUTES` |
+| `backend/src/controllers/admin.controller.js` | Added email verification checks to admin mentor review flows |
+| `backend/src/controllers/auth.controller.js` | Implemented verify-email, resend-verification, domain validation, and emailVerified on me |
+| `backend/src/controllers/booking.controller.js` | Added from/to calendar filters, .ics generation endpoint, and unverified user guard |
+| `backend/src/controllers/chat.controller.js` | Added atomic email throttling with message text preview and unverified user guard |
+| `backend/src/controllers/mentor.controller.js` | Added unverified mentor review submission guard |
+| `backend/src/controllers/profile.controller.js` | Maintained profile access while ensuring role completeness |
+| `backend/src/middlewares/auth.js` | Added `requireEmailVerified` middleware |
+| `backend/src/middlewares/rateLimiter.js` | Added rate limiters for email verification (10/15m) and resend (3/hr) |
+| `backend/src/models/Booking.js` | Added `reminder24hSent` schema boolean flag |
+| `backend/src/models/EmailVerification.js` | Mongoose model for token hashes with 24-hour TTL index |
+| `backend/src/models/MentorProfile.js` | Added `adminNotifiedAt` schema field for verified mentor review alerts |
+| `backend/src/models/Payment.js` | Added `refundDueEmailSentAt` and `refundedEmailSentAt` tracking fields |
+| `backend/src/models/User.js` | Added `emailVerified` (default false) and `emailVerifiedAt` schema fields |
+| `backend/src/routes/auth.routes.js` | Registered verify-email and resend-verification routes |
+| `backend/src/routes/booking.routes.js` | Registered calendar.ics route and attached requireEmailVerified to booking creation |
+| `backend/src/routes/chat.routes.js` | Attached requireEmailVerified to conversation and message routes |
+| `backend/src/routes/mentor.routes.js` | Attached requireEmailVerified to mentor review submission |
+| `backend/src/routes/payment.routes.js` | Attached requireEmailVerified to payment order and confirmation routes |
+| `backend/src/server.js` | Registered startup email verification migration |
+| `backend/src/services/adminSeed.js` | Pre-verified seeded admin user |
+| `backend/src/services/bookingJobs.js` | Added 24-hour reminder job with atomic deduplication and calendar invites |
+| `backend/src/services/email.js` | Added verification, refund pending, refund completed, and reminder emails with IST labels and ICS attachments |
+| `backend/src/services/payments/paymentService.js` | Triggered refund emails with atomic flag updates on cancellation and admin refund |
+| `backend/src/services/userMigration.js` | One-time idempotent startup migration marking existing users verified |
+| `backend/src/utils/calendar.js` | RFC 5545 iCalendar generator with CRLF, UTC dates, and <= 75 byte folded lines |
+| `backend/src/utils/disposableEmailDomains.js` | Blocklist of >20 well-known disposable email domains |
+| `backend/src/utils/emailValidation.js` | Production DNS MX lookup with 3s timeout and throwaway domain checks |
+| `backend/tests/auth-profile.test.js` | Updated test helpers to ensure pre-verified test users |
+| `backend/tests/calendar.test.js` | Unit and integration tests for calendar filters, .ics generation, and IDOR protection |
+| `backend/tests/chat-api.test.js` | Updated chat test suites to verify unverified user blocking and rate limits |
+| `backend/tests/email-verification.test.js` | Integration tests for verification tokens, TTL, resend rate limits, and guardrails |
+| `backend/tests/payment-service.test.js` | Updated payment tests for emailVerified requirements |
+| `backend/tests/reminder-refund-emails.test.js` | Unit tests for atomic refund and 24h reminder email deduplication |
+| `frontend/scripts/captureBeforeNotifications.js` | Automation script capturing 18 baseline before screenshots |
+| `frontend/scripts/runRealUserVerification.js` | Automation script verifying real user flows and capturing all 84 screenshots |
+| `frontend/src/App.jsx` | Registered `/verify-email` and `/calendar` routes |
+| `frontend/src/components/CameraMicCheckCard.jsx` | Standalone camera and microphone diagnostic card for Settings |
+| `frontend/src/components/ChatNotificationListener.jsx` | App-level socket listener, unread title updater, and popup toast manager |
+| `frontend/src/components/Layout.jsx` | Integrated `<VerificationBanner />` stacked with approval banner |
+| `frontend/src/components/Navbar.jsx` | Added Messages link red dot with number badge (`9+`) and aria-label |
+| `frontend/src/components/NotificationsAndBanner.test.jsx` | Unit tests for navbar badge, banner countdown, and dashboard greetings |
+| `frontend/src/components/VerificationBanner.jsx` | Shared warning banner with 60s countdown and resend action |
+| `frontend/src/contexts/AuthContext.jsx` | Exposed `emailVerified` on user context |
+| `frontend/src/pages/AdminPage.jsx` | Added personalized "Welcome back, <name>" header |
+| `frontend/src/pages/AuthPage.jsx` | Added email verification notice to registration form |
+| `frontend/src/pages/CalendarAndCamera.test.jsx` | Unit tests for calendar grid, keyboard navigation, and camera check card |
+| `frontend/src/pages/CalendarPage.jsx` | Month calendar grid with localized dates, session chips, and .ics export |
+| `frontend/src/pages/CheckoutPage.jsx` | Handled friendly `EMAIL_NOT_VERIFIED` error display |
+| `frontend/src/pages/DashboardPage.jsx` | Added personalized "Welcome back, <name>" header |
+| `frontend/src/pages/MentorDetailPage.jsx` | Handled friendly `EMAIL_NOT_VERIFIED` error display on booking button |
+| `frontend/src/pages/MentorEarningsPage.jsx` | Added personalized "Welcome back, <name>" header |
+| `frontend/src/pages/MessagesPage.jsx` | Handled friendly `EMAIL_NOT_VERIFIED` error display |
+| `frontend/src/pages/SessionsPage.jsx` | Added List/Calendar switcher and "Add to calendar" ICS download buttons |
+| `frontend/src/pages/SettingsPage.jsx` | Added Camera and microphone diagnostic card for learners and mentors |
+| `frontend/src/pages/VideoRoomPage.jsx` | Added camera check link to Settings |
+| `frontend/src/pages/VerifyEmailPage.jsx` | Standalone email verification page with URL token scrubbing |
+| `frontend/src/pages/VerifyEmailPage.test.jsx` | Unit tests for /verify-email token scrubbing and API states |
+| `frontend/src/services/mentors.js` | Added `downloadBookingIcs` API helper |
+
+
+
 
 
 

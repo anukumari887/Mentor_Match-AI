@@ -119,10 +119,29 @@ Reset password using a single-use token received via email. Validates SHA-256 to
 - **Response `200 OK`**: `{ "message": "Password reset successfully. You may now log in with your new password." }`
 - **Error Codes:** `INVALID_OR_EXPIRED_TOKEN` (400), `VALIDATION_ERROR` (400)
 
+### `POST /api/auth/verify-email`
+Verify user email address using a single-use token received via email link. Performs constant-time lookup against hashed tokens in `emailVerifications`, marks token as used, and sets `emailVerified: true` and `emailVerifiedAt: Date` on the user record. Does not create a login session. Verifying an already verified user succeeds quietly.
+- **Auth:** None (Public to allow verification across devices)
+- **Rate Limit:** 10 requests per 15 minutes per IP
+- **Body:**
+  ```json
+  {
+    "token": "64_character_hex_token"
+  }
+  ```
+- **Response `200 OK`**: `{ "message": "Email verified successfully" }`
+- **Error Codes:** `INVALID_OR_EXPIRED_TOKEN` (400), `VALIDATION_ERROR` (400)
+
+### `POST /api/auth/resend-verification`
+Resend email verification link to currently logged-in user. Replaces any earlier unused verification tokens with a new crypto-random token and sends email via transactional email service.
+- **Auth:** Required (Learner or Mentor)
+- **Rate Limit:** 3 requests per hour per user; 60-second cooldown between requests
+- **Response `200 OK`**: `{ "message": "Verification link sent. Please check your inbox." }`
+
 ### `GET /api/auth/me`
-Retrieve currently logged-in user and profile metadata (including `profileCompleteness` for mentors).
+Retrieve currently logged-in user and profile metadata (including `emailVerified: boolean` and `profileCompleteness` for mentors).
 - **Auth:** Required
-- **Response `200 OK`**: Returns user record and associated learner/mentor profile.
+- **Response `200 OK`**: Returns user record (with `emailVerified`) and associated learner/mentor profile.
 
 ---
 
@@ -252,9 +271,20 @@ Reserve a slot and initiate a 10-minute hold with a distributed Redis lock.
 
 ### `GET /api/bookings`
 List current user's bookings (upcoming and past).
+- **Auth:** Required (Learner or Mentor)
+- **Query Params:**
+  - `from` (optional): ISO 8601 start timestamp filter
+  - `to` (optional): ISO 8601 end timestamp filter (max 100 days range)
+- **Response `200 OK`**: `{ "bookings": [...] }`
 
 ### `GET /api/bookings/:id`
 Retrieve details of a single booking.
+
+### `GET /api/bookings/:id/calendar.ics`
+Generate and download an RFC 5545 iCalendar (`.ics`) file for a confirmed or completed booking.
+- **Auth:** Required (Booking participants only; 404 for non-participants)
+- **Response `200 OK`**: `Content-Type: text/calendar; charset=utf-8`, `Content-Disposition: attachment; filename="<bookingId>.ics"`
+- **Format:** Strict CRLF line endings, UTC dates (`DTSTART`, `DTEND`, `DTSTAMP`), 15-minute VALARM reminder, UID, escaped text fields, and <= 75 byte folded lines. Strict privacy: does not include email addresses.
 
 ### `POST /api/bookings/:id/cancel`
 Cancel an upcoming session. Evaluates free cancellation cutoff (24 hours prior) for refund eligibility.
