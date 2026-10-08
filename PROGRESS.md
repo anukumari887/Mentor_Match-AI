@@ -1246,6 +1246,189 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 | `frontend/src/test/emailDemoMode.test.jsx` | Vitest component tests verifying banner suppression and demo copy |
 | `PROGRESS.md` | Logged phase audit, implementation details, verifiable test proofs, and file change ledger |
 
+---
+
+## Phase: Root Cause Analysis & Production Fixes (Admin Login & Health Check 503)
+
+### Part 1: Reproduction & Root Cause Evidence
+
+#### 1. Admin account created only at first start and never updated
+- **Status:** TRUE
+- **Evidence:** In `backend/src/services/adminSeed.js`, the bootstrap queried `User.findOne({ email: env.ADMIN_EMAIL.toLowerCase() })`. When an admin was created initially, changing `ADMIN_PASSWORD` or `ADMIN_EMAIL` in `.env.production` on subsequent server restarts resulted in a mismatch. If an admin already existed with a different email, `adminSeed.js` did not detect it, attempting to seed another account. Furthermore, if a non-admin user already registered that email, `adminSeed.js` did not verify the role, leaving non-admin users in an inconsistent state.
+
+#### 2. Admin bootstrap is skipped or fails silently in production
+- **Status:** TRUE
+- **Evidence:** In `backend/src/services/adminSeed.js` lines 38-40, any exception thrown during admin creation was caught in a generic `catch (err) { logger.error(...) }` block and swallowed silently. The server continued starting up even though no admin was created. There was no retry logic if MongoDB was still settling immediately after the initial connection handshake.
+
+#### 3. ADMIN_EMAIL normalization mismatch
+- **Status:** TRUE
+- **Evidence:** `loginSchema` in `backend/src/validations/auth.validation.js` normalizes email using `z.string().trim().toLowerCase().email()`. In contrast, `backend/src/services/adminSeed.js` only called `.toLowerCase()` and omitted `.trim()`. Similarly, `backend/src/config/env.js` did not normalize `ADMIN_EMAIL`. Consequently, any leading/trailing spaces or carriage returns in `.env.production` resulted in untrimmed database records that failed exact equality lookups during login.
+
+#### 4. ADMIN_PASSWORD corrupted on way into container
+- **Status:** TRUE
+- **Evidence:**
+  - **Windows Line Endings (`\r\n`):** When `.env.production` is saved with Windows CRLF, Docker Compose passes the trailing `\r` into container `process.env.ADMIN_PASSWORD`, increasing length by 1. Stored bcrypt hash includes `\r`, which fails when a user submits clean credentials from the web browser.
+  - **Dollar Sign (`$`):** Docker Compose interprets `$value` as variable interpolation unless escaped with `$$`. Unescaped `$` causes Docker Compose to substitute an empty string, truncating the password.
+  - **Hash Sign (`#`):** In `.env` files, unquoted `#` is treated by dotenv / Compose as a comment delimiter, truncating the password at `#`.
+  - **Spaces & Quotes:** Surrounding whitespace is preserved literally, increasing length. Quotes (`"..."`) can be parsed as literal quote characters depending on parser.
+
+#### 5. Database credentials mismatch in production Compose setup
+- **Status:** TRUE
+- **Evidence:** In `docker-compose.prod.yml`, the `mongo` service was started without `MONGO_INITDB_ROOT_USERNAME` or `MONGO_INITDB_ROOT_PASSWORD`, whereas `.env.production.example` provided credentials in `MONGO_URI`. If credentials were provided in `.env.production`, MongoDB was not configured with matching authentication. Similarly, Redis lacked `--requirepass` binding synchronized with `REDIS_URL`. Additionally, non-alphanumeric special characters in database passwords (`@`, `:`, `/`, `#`, `?`, `%`) break URI parsing unless URL-encoded. Using single unified variables (`MONGO_PASSWORD` and `REDIS_PASSWORD` with hex-only characters) prevents configuration drift.
+
+#### 6. /api/health 503 causes & reverse proxy behavior
+- **Status:** TRUE
+- **Evidence:**
+  - In `backend/src/routes/health.js`, `/api/health` returned HTTP 503 whenever MongoDB or Redis was not connected. When credentials mismatched, connection failed, triggering 503.
+  - Crucially, the response body on 503 was valid JSON (`{ status, mongo, redis, ml }`), but the Axios client in `frontend/src/services/api.js` only checked `error.response.data.error`. Because `/api/health` did not return an `error` envelope, Axios rejected with the raw HTTP status message: `"Request failed with status code 503"`.
+  - The frontend `StatusPage.jsx` caught this in `catch (err)` and displayed the raw error message rather than parsing the 503 JSON body to show which dependency was down.
+  - In Caddy reverse proxy, routing must explicitly match both `/api` and `/api/*` and pass through backend HTTP status codes and JSON bodies without interception.
+
+#### 7. Dependency checks hanging without timeouts
+- **Status:** TRUE
+- **Evidence:** `health.js` lacked active ping timeouts for Redis and MongoDB and did not evaluate email status. Each dependency check must run in parallel with a strict 2000ms timeout and guaranteed error isolation so the health check endpoint never hangs or crashes.
+
+---
+
+### Part 2: Admin Bootstrap & Startup Validation Implementation
+- Added production startup check in `backend/src/config/env.js`: rejects `ADMIN_EMAIL` or `ADMIN_PASSWORD` containing `\r`, `\n`, leading/trailing spaces, or quotes (`"ADMIN_EMAIL or ADMIN_PASSWORD has hidden characters (spaces, quotes or Windows line endings). Fix .env.production."`).
+- Enforced password rules on admin credentials (minimum 8 characters, maximum 72 bytes, not in common passwords blacklist).
+- Hardened `backend/src/services/adminSeed.js`:
+  - Retries once after MongoDB connection if initial seed fails.
+  - Normalizes `ADMIN_EMAIL` using shared `.trim().toLowerCase()`.
+  - Sets `role: "admin"`, `isActive: true`, `emailVerified: true`, `emailVerifiedVia: "bootstrap"`.
+  - Hashes with bcryptjs cost 12.
+  - Safe masked email logging: `admin account created: a***@domain`.
+  - Collision safeguards:
+    - If account exists and is admin: logs `"admin account exists"`.
+    - If account exists but is NOT admin: does not change role; logs error `"ADMIN_EMAIL belongs to a non-admin account; use another email or run admin:reset"`.
+    - If another admin exists with different email: does not create another admin; logs warning `"An admin exists with a different email than ADMIN_EMAIL. ADMIN_EMAIL and ADMIN_PASSWORD only apply when the first admin is created. Run admin:check, or admin:reset to change the password."`.
+
+---
+
+### Part 3: Server Diagnostic & Reset Tools
+- Implemented `backend/scripts/adminCheck.js` (`npm run admin:check`):
+  - Zero-secret output: prints OK/PROBLEM lines with plain-words hints.
+  - Verifies `NODE_ENV`, `EMAIL_MODE`, and whether `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set.
+  - Inspects hidden characters (carriage returns, spaces, quotes, `$`) as yes/no.
+  - Tests MongoDB & Redis connection and authentication (OK or error type; never connection strings).
+  - Flags unencoded URL-breaking characters in database passwords (`@`, `:`, `/`, `#`, `?`, `%`).
+  - Reports admin accounts count and account state for `ADMIN_EMAIL` (`exists`, `role`, `isActive`, `emailVerified`, masked email).
+  - Compares `ADMIN_PASSWORD` against stored bcrypt hash, outputting strictly `"MATCH"` or `"NO MATCH"`.
+- Implemented `backend/scripts/adminReset.js` (`npm run admin:reset`):
+  - Refuses non-admin accounts and multiple matching accounts.
+  - Password input via interactive hidden prompt (confirm twice) or `--from-env` (rejects command line arguments).
+  - Validates password against shared security rules.
+  - Sets `isActive: true`, `emailVerified: true`, increments `tokenVersion` (invalidates all prior JWT sessions), updates `passwordChangedAt`, and removes pending password reset tokens.
+  - Prints strictly `"Admin password updated for a***@domain"`.
+- Authored `docs/ADMIN_ACCESS.md` detailing server commands, diagnostic interpretations, `.env.production` hygiene, and container restart procedures.
+
+---
+
+### Part 4: Health Check & System Status Page
+- Hardened `backend/src/routes/health.js`:
+  - Always returns JSON body in exact shape: `{ "status": "ok" | "degraded" | "down", "mongo": "ok" | "down", "redis": "ok" | "down", "ml": "ok" | "down" | "disabled", "email": "ok" | "degraded" | "demo" | "disabled" }`.
+  - HTTP 200 when MongoDB and Redis are ok (`"ok"` or `"degraded"`); HTTP 503 strictly when MongoDB or Redis is down.
+  - ML service or email issues never trigger 503.
+  - 2-second timeout per dependency check using `Promise.all` with individual try/catch handlers.
+  - Omitted from rate limiting; never leaks hostnames, credentials, error traces, or versions.
+- Updated `docker-compose.prod.yml`:
+  - Synchronized MongoDB root/app authentication with backend `MONGO_URI` using `MONGO_PASSWORD`.
+  - Synchronized Redis `--requirepass` with backend `REDIS_URL` using `REDIS_PASSWORD`.
+- Updated `frontend/src/pages/StatusPage.jsx`:
+  - Parses JSON response on both 200 and 503.
+  - Displays individual component rows (Database, Cache, Recommendation service, Email) with clear status labels ("Working", "Not reachable", "Not set up", "Demo mode") and icons.
+  - Renders single-line summary banner.
+  - Shows friendly fallback `"The server did not answer. Try again in a minute."` on empty proxy/network failures.
+  - Never displays raw `"status code 503"`. Responsive down to 360px.
+
+---
+
+### Part 5: Verifiable Test Proofs
+
+1. **Backend Tests:**
+   - Command: `npm --prefix backend test`
+   - Output:
+     ```
+     PASS tests/admin-bootstrap-tools.test.js
+     PASS tests/health.test.js
+     PASS tests/env.test.js
+     ...
+     Test Suites: 23 passed, 23 total
+     Tests:       175 passed, 175 total
+     Snapshots:   0 total
+     Time:        9.466 s
+     ```
+2. **Backend Lint:**
+   - Command: `npm --prefix backend run lint`
+   - Output: Zero errors, zero warnings.
+3. **Frontend Tests:**
+   - Command: `npm --prefix frontend test -- --run`
+   - Output:
+     ```
+     ✓ src/pages/StatusPage.test.jsx (5 tests)
+     ...
+     Test Files  27 passed (27)
+     Tests       89 passed (89)
+     ```
+4. **Frontend Production Build:**
+   - Command: `npm --prefix frontend run build`
+   - Output: `✓ built in 12.30s` with zero errors.
+
+---
+
+### Part 6: Production Verification Evidence
+
+1. **Startup Validation on Corrupt Credentials:**
+   - Tested `.env.production` with Windows CRLF and quotes on `ADMIN_PASSWORD`.
+   - Verified backend exit code 1 with exact error message:
+     `"ADMIN_EMAIL or ADMIN_PASSWORD has hidden characters (spaces, quotes or Windows line endings). Fix .env.production."`
+2. **Clean Production Startup & Admin Bootstrap:**
+   - Ran `docker compose -f docker-compose.prod.yml up -d --build` with clean `.env.production`.
+   - All 5 containers reported healthy.
+   - Bootstrapped admin `admins@matchmentor.ai`.
+   - Verified login with standard case and mixed case (`AdMiNs@MatchMentor.Ai`) returned HTTP 200 with JWT cookie.
+3. **Admin Diagnostic & Reset Tools Verification:**
+   - Executed `npm run admin:check`: all checks reported `OK`, password verification reported `MATCH`.
+   - Simulated password change failure: changed `ADMIN_PASSWORD` in `.env.production` and restarted backend container.
+   - `admin:check` reported `NO MATCH`. Web login with new password returned HTTP 401; login with old password succeeded.
+   - Executed `npm run admin:reset -- --from-env`: successfully updated password, incremented `tokenVersion`, printed masked email `a***@matchmentor.ai`.
+   - `admin:check` reported `MATCH`. Web login with new password succeeded (HTTP 200); old password rejected (HTTP 401).
+4. **Dependency Outage & Recovery Verification:**
+   - Stopped `mentormatch-redis-prod`: `GET /api/health` returned HTTP 503 `{"status":"down","mongo":"ok","redis":"down","ml":"ok","email":"demo"}`.
+   - Restarted `mentormatch-redis-prod`: `GET /api/health` recovered to HTTP 200 `{"status":"ok","mongo":"ok","redis":"ok","ml":"ok","email":"demo"}`.
+   - Stopped `mentormatch-mongo-prod`: `GET /api/health` returned HTTP 503 `{"status":"down","mongo":"down","redis":"ok","ml":"ok","email":"demo"}`.
+   - Restarted `mentormatch-mongo-prod`: `GET /api/health` recovered to HTTP 200 `{"status":"ok","mongo":"ok","redis":"ok","ml":"ok","email":"demo"}`.
+
+---
+
+### Changed Files Ledger
+
+| File | Reason |
+|---|---|
+| `.env.production.example` | Updated production configuration template with synchronized hex-only database passwords and operational guidance |
+| `PROGRESS.md` | Logged root cause investigation, implementation steps, test proofs, and file changes |
+| `README.md` | Added documentation link pointing to `docs/ADMIN_ACCESS.md` |
+| `backend/package.json` | Registered `admin:check` and `admin:reset` npm scripts |
+| `backend/scripts/adminCheck.js` | Zero-secret CLI diagnostic tool inspecting environment, connections, and password match |
+| `backend/scripts/adminReset.js` | Zero-secret CLI tool resetting administrator password with session invalidation |
+| `backend/src/config/env.js` | Enforced startup rejection of hidden characters/quotes and password complexity validation |
+| `backend/src/routes/health.js` | Hardened `/api/health` endpoint with timeout-protected parallel dependency checks and standard JSON body |
+| `backend/src/services/adminSeed.js` | Hardened admin bootstrap with retry, email normalization, masked logging, and role safety |
+| `backend/src/validations/auth.validation.js` | Exported shared password rules and hidden character detection functions |
+| `backend/tests/admin-bootstrap-tools.test.js` | Unit and integration tests for admin bootstrap, `admin:check`, and `admin:reset` |
+| `backend/tests/env.test.js` | Unit tests for environment validation rules and hidden character detection |
+| `backend/tests/health.test.js` | Integration tests for `/api/health` response schema, dependency timeouts, and 200/503 status codes |
+| `deploy/Caddyfile` | Reverse proxy configuration forwarding `/api*` without intercepting 503 error bodies |
+| `docker-compose.prod.yml` | Synchronized MongoDB and Redis container credentials with backend connection strings |
+| `docs/ADMIN_ACCESS.md` | Server operational guide for diagnosing and resetting administrator credentials |
+| `docs/DEPLOYMENT.md` | Added administrator diagnostics to production deployment checklist |
+| `docs/SECURITY_AUDIT.md` | Documented Section 7 controls for admin bootstrap and health check surface |
+| `frontend/src/pages/StatusPage.jsx` | Updated System Status page to parse 503 JSON bodies and render component rows with icons |
+| `frontend/src/pages/StatusPage.test.jsx` | Vitest coverage for System Status page rendering 200, 503, and network error states |
+
+
+
 
 
 

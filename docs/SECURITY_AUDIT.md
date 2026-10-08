@@ -92,4 +92,18 @@ This document tracks verified security controls, vulnerability mitigations, cryp
 | **Calendar ICS IDOR & Information Leakage** | Unauthorized booking snooping & email disclosure | `GET /api/bookings/:id/calendar.ics` enforces strict participant authorization, returning 404 for unauthorized users or unconfirmed bookings. `.ics` generation omits user email addresses, encodes dates in UTC, and folds lines <= 75 bytes. | Verified in `tests/calendar.test.js` |
 | **Camera & Microphone Hardware Shutdown** | Eavesdropping & persistent media capture | Settings test card invokes `getUserMedia` strictly after user button click. All audio and video tracks explicitly stopped (`track.stop()`) on Stop button click, page navigation, and component unmount. | Verified in `src/pages/CalendarAndCamera.test.jsx` & browser verification |
 
+---
+
+## 7. Administrator Bootstrap & Health Check Hardening
+
+| Security Control | Threat Mitigated | Implementation | Verification Status |
+| :--- | :--- | :--- | :--- |
+| **Hidden Character Rejection on Startup** | Malformed / corrupted credentials from Windows CRLF or surrounding quotes | Environment validation strictly rejects `ADMIN_EMAIL` and `ADMIN_PASSWORD` containing carriage returns (`\r`), newlines (`\n`), trailing/leading whitespace, or quotes. | Verified in `tests/env.test.js` & Docker startup tests |
+| **Password Rule Enforcement on Admin** | Weak administrator credentials / DoS | Admin credentials validated against 8-char minimum, 72-byte maximum, and common passwords blacklist. | Verified in `tests/env.test.js` & `tests/admin-bootstrap-tools.test.js` |
+| **Zero-Secret Diagnostic CLI (`admin:check`)** | Credential leakage in terminal logs / history | CLI prints strictly OK/PROBLEM status, hidden characters (yes/no), URL-breaking characters (yes/no), and bcrypt match (`MATCH`/`NO MATCH`). Zero passwords, hashes, tokens, or connection strings are printed. | Verified in `tests/admin-bootstrap-tools.test.js` |
+| **Secure Admin Password Reset (`admin:reset`)** | Unsafe password resets & zombie admin sessions | CLI accepts password via interactive hidden prompt or `--from-env` (rejects command line arguments). Increments `tokenVersion` (invalidates active admin tokens), updates `passwordChangedAt`, and removes pending reset tokens. | Verified in `tests/admin-bootstrap-tools.test.js` |
+| **Safe Admin Role Non-Escalation** | Privilege escalation via environment configuration | Admin bootstrap checks if an account exists with `ADMIN_EMAIL`; if it is a non-admin role (e.g. learner/mentor), bootstrap refuses to elevate its role and logs an error. | Verified in `tests/admin-bootstrap-tools.test.js` |
+| **Strict Minimal Health Check Surface** | Hostname/version reconnaissance & information disclosure | `/api/health` returns only `{ status, mongo, redis, ml, email }`. All database hostnames, error traces, software versions, and internal topology are completely omitted. | Verified in `tests/health.test.js` |
+
+
 

@@ -1,0 +1,25 @@
+{
+    # Global options block
+}
+
+{$APP_DOMAIN:localhost} {
+    header Permissions-Policy "camera=(self), microphone=(self)"
+
+    # Route API and health checks to the backend container
+    handle /api* {
+        reverse_proxy backend:5000
+    }
+
+    handle /socket.io* {
+        reverse_proxy backend:5000
+    }
+
+    handle /metrics {
+        reverse_proxy backend:5000
+    }
+
+    # Route all other web requests to the frontend static server
+    handle {
+        reverse_proxy frontend:80
+    }
+}

@@ -16,7 +16,7 @@ const envSchema = z.object({
   COOKIE_SECURE: z.coerce.boolean().default(false),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
 
-  ADMIN_EMAIL: z.string().email(),
+  ADMIN_EMAIL: z.string().trim().toLowerCase().email(),
   ADMIN_PASSWORD: z.string().min(8, 'ADMIN_PASSWORD must be at least 8 characters long'),
 
   PAYMENT_MODE: z.enum(['mock', 'razorpay']).default('mock'),
@@ -75,11 +75,25 @@ function validateEnv(rawEnv = process.env) {
 
   // Startup safety rules:
   if (env.NODE_ENV === 'production') {
+    const { detectHiddenCharacters, checkPasswordRules } = require('../validations/auth.validation');
+
+    const rawEmail = rawEnv.ADMIN_EMAIL;
+    const rawPassword = rawEnv.ADMIN_PASSWORD;
+
+    if (detectHiddenCharacters(rawEmail) || detectHiddenCharacters(rawPassword)) {
+      throw new Error('ADMIN_EMAIL or ADMIN_PASSWORD has hidden characters (spaces, quotes or Windows line endings). Fix .env.production.');
+    }
+
     if (env.JWT_SECRET.includes('dev_only')) {
       throw new Error('Production safety check failed: JWT_SECRET must not contain "dev_only"');
     }
     if (env.ADMIN_PASSWORD === 'ChangeMe123!') {
       throw new Error('Production safety check failed: ADMIN_PASSWORD must not be the default value');
+    }
+
+    const pwdCheck = checkPasswordRules(env.ADMIN_PASSWORD);
+    if (!pwdCheck.valid) {
+      throw new Error(`Production safety check failed: ADMIN_PASSWORD invalid - ${pwdCheck.message}`);
     }
     if (env.PAYMENT_MODE === 'mock') {
       throw new Error('Production safety check failed: PAYMENT_MODE=mock is refused in production');

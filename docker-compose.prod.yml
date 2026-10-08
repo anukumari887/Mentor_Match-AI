@@ -5,10 +5,14 @@ services:
     restart: unless-stopped
     ports:
       - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-secretmongopassword}
+      - MONGO_INITDB_DATABASE=mentormatch
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "mongosh --quiet -u $${MONGO_USER:-admin} -p \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval \"db.adminCommand('ping')\" || mongosh --quiet --eval \"db.adminCommand('ping')\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -20,10 +24,13 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-secretredispassword}
+    command: ["sh", "-c", "if [ -n \"$$REDIS_PASSWORD\" ]; then exec redis-server --requirepass \"$$REDIS_PASSWORD\"; else exec redis-server; fi"]
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -54,8 +61,10 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=5000
-      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/mentormatch}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - MONGO_PASSWORD=${MONGO_PASSWORD:-secretmongopassword}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-secretredispassword}
+      - MONGO_URI=${MONGO_URI:-mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-secretmongopassword}@mongo:27017/mentormatch?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://:${REDIS_PASSWORD:-secretredispassword}@redis:6379}
       - ML_SERVICE_URL=http://ml-service:8000
       - JWT_SECRET=${JWT_SECRET:-production_strong_secret_key_at_least_32_characters_long!}
       - JWT_EXPIRES_IN=7d

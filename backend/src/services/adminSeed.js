@@ -3,43 +3,81 @@ const User = require('../models/User');
 const { env } = require('../config/env');
 const logger = require('../config/logger');
 
-async function ensureAdminUser() {
-  try {
-    const existingAdmin = await User.findOne({ email: env.ADMIN_EMAIL.toLowerCase() });
-    if (!existingAdmin) {
-      logger.info(`Admin user not found. Creating default admin for ${env.ADMIN_EMAIL}...`);
-      const salt = await bcrypt.genSalt(12);
-      const passwordHash = await bcrypt.hash(env.ADMIN_PASSWORD, salt);
+function maskEmail(email) {
+  if (!email || typeof email !== 'string' || !email.includes('@')) return '***';
+  const [local, domain] = email.split('@');
+  return `${local.charAt(0)}***@${domain}`;
+}
 
-      await User.create({
-        name: 'System Admin',
-        email: env.ADMIN_EMAIL.toLowerCase(),
-        passwordHash,
-        role: 'admin',
-        isActive: true,
-        emailVerified: true,
-        emailVerifiedAt: new Date()
-      });
-      logger.info(`Default admin user successfully created: ${env.ADMIN_EMAIL}`);
+async function seedAdminInternal() {
+  const normalizedEmail = (env.ADMIN_EMAIL || '').trim().toLowerCase();
+  if (!normalizedEmail) {
+    logger.warn('ADMIN_EMAIL is empty. Skipping admin bootstrap.');
+    return;
+  }
+
+  // 1. Check if a user with that email already exists
+  const userWithEmail = await User.findOne({ email: normalizedEmail });
+
+  if (userWithEmail) {
+    if (userWithEmail.role === 'admin') {
+      logger.info('admin account exists');
+      return;
     } else {
-      const isMatch = await bcrypt.compare(env.ADMIN_PASSWORD, existingAdmin.passwordHash);
-      if (!isMatch) {
-        logger.info(`Updating admin password for ${env.ADMIN_EMAIL}...`);
-        const salt = await bcrypt.genSalt(12);
-        existingAdmin.passwordHash = await bcrypt.hash(env.ADMIN_PASSWORD, salt);
-      }
-      if (!existingAdmin.emailVerified) {
-        existingAdmin.emailVerified = true;
-        existingAdmin.emailVerifiedAt = new Date();
-      }
-      await existingAdmin.save();
-      logger.debug('Admin user verified and updated.');
+      logger.error('ADMIN_EMAIL belongs to a non-admin account; use another email or run admin:reset');
+      return;
     }
-  } catch (err) {
-    logger.error(`Error verifying/seeding admin user: ${err.message}`);
+  }
+
+  // 2. Check if an admin exists with a different email
+  const existingAdmin = await User.findOne({ role: 'admin' });
+  if (existingAdmin) {
+    logger.warn(
+      'An admin exists with a different email than ADMIN_EMAIL. ADMIN_EMAIL and ADMIN_PASSWORD only apply when the first admin is created. Run admin:check, or admin:reset to change the password.'
+    );
+    return;
+  }
+
+  // 3. No user with that email and no admin exists: create admin
+  const salt = await bcrypt.genSalt(12);
+  const passwordHash = await bcrypt.hash(env.ADMIN_PASSWORD, salt);
+
+  await User.create({
+    name: 'System Admin',
+    email: normalizedEmail,
+    passwordHash,
+    role: 'admin',
+    isActive: true,
+    emailVerified: true,
+    emailVerifiedAt: new Date(),
+    emailVerifiedVia: 'bootstrap',
+    tokenVersion: 0
+  });
+
+  logger.info(`admin account created: ${maskEmail(normalizedEmail)}`);
+}
+
+async function ensureAdminUser() {
+  let attempt = 0;
+  while (attempt < 2) {
+    attempt++;
+    try {
+      await seedAdminInternal();
+      return;
+    } catch (err) {
+      if (attempt < 2) {
+        logger.warn(`Admin bootstrap attempt 1 failed: ${err.message}. Retrying once...`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      } else {
+        logger.error(`Admin bootstrap failed after retry: ${err.message}`);
+        throw err;
+      }
+    }
   }
 }
 
 module.exports = {
-  ensureAdminUser
+  ensureAdminUser,
+  maskEmail,
+  seedAdminInternal
 };

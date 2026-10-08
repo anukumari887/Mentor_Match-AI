@@ -90,4 +90,95 @@ describe('Environment Validation', () => {
       });
     }).toThrow(/requires RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, and RAZORPAY_WEBHOOK_SECRET/);
   });
+
+  it('fails in production if ADMIN_PASSWORD contains Windows carriage return, spaces or quotes', () => {
+    const validProd = {
+      ...validDevEnv,
+      NODE_ENV: 'production',
+      JWT_SECRET: 'production_super_secure_secret_that_is_long_enough',
+      COOKIE_SECURE: 'true',
+      PAYMENT_MODE: 'razorpay',
+      RAZORPAY_KEY_ID: 'key_id',
+      RAZORPAY_KEY_SECRET: 'key_secret',
+      RAZORPAY_WEBHOOK_SECRET: 'wh_secret'
+    };
+
+    expect(() => {
+      validateEnv({
+        ...validProd,
+        ADMIN_PASSWORD: 'StrongPassword123!\r'
+      });
+    }).toThrow(/ADMIN_EMAIL or ADMIN_PASSWORD has hidden characters \(spaces, quotes or Windows line endings\)\. Fix \.env\.production\./);
+
+    expect(() => {
+      validateEnv({
+        ...validProd,
+        ADMIN_PASSWORD: ' StrongPassword123!'
+      });
+    }).toThrow(/ADMIN_EMAIL or ADMIN_PASSWORD has hidden characters \(spaces, quotes or Windows line endings\)\. Fix \.env\.production\./);
+
+    expect(() => {
+      validateEnv({
+        ...validProd,
+        ADMIN_PASSWORD: '"StrongPassword123!"'
+      });
+    }).toThrow(/ADMIN_EMAIL or ADMIN_PASSWORD has hidden characters \(spaces, quotes or Windows line endings\)\. Fix \.env\.production\./);
+  });
+
+  it('fails in production if ADMIN_EMAIL contains carriage return, quotes or leading/trailing spaces', () => {
+    const validProd = {
+      ...validDevEnv,
+      NODE_ENV: 'production',
+      JWT_SECRET: 'production_super_secure_secret_that_is_long_enough',
+      COOKIE_SECURE: 'true',
+      ADMIN_PASSWORD: 'StrongPassword123!',
+      PAYMENT_MODE: 'razorpay',
+      RAZORPAY_KEY_ID: 'key_id',
+      RAZORPAY_KEY_SECRET: 'key_secret',
+      RAZORPAY_WEBHOOK_SECRET: 'wh_secret'
+    };
+
+    expect(() => {
+      validateEnv({
+        ...validProd,
+        ADMIN_EMAIL: 'admin@mentormatch.local\r'
+      });
+    }).toThrow(/ADMIN_EMAIL or ADMIN_PASSWORD has hidden characters \(spaces, quotes or Windows line endings\)\. Fix \.env\.production\./);
+
+    expect(() => {
+      validateEnv({
+        ...validProd,
+        ADMIN_EMAIL: ' admin@mentormatch.local'
+      });
+    }).toThrow(/ADMIN_EMAIL or ADMIN_PASSWORD has hidden characters \(spaces, quotes or Windows line endings\)\. Fix \.env\.production\./);
+  });
+
+  it('fails in production if ADMIN_PASSWORD is in the common passwords list', () => {
+    const validProd = {
+      ...validDevEnv,
+      NODE_ENV: 'production',
+      JWT_SECRET: 'production_super_secure_secret_that_is_long_enough',
+      COOKIE_SECURE: 'true',
+      PAYMENT_MODE: 'razorpay',
+      RAZORPAY_KEY_ID: 'key_id',
+      RAZORPAY_KEY_SECRET: 'key_secret',
+      RAZORPAY_WEBHOOK_SECRET: 'wh_secret'
+    };
+
+    expect(() => {
+      validateEnv({
+        ...validProd,
+        ADMIN_PASSWORD: 'password'
+      });
+    }).toThrow(/Production safety check failed: ADMIN_PASSWORD invalid/);
+  });
+
+  it('normalizes ADMIN_EMAIL with trim and lowercase in validated output', () => {
+    const result = validateEnv({
+      ...validDevEnv,
+      ADMIN_EMAIL: '  Admin.Test@MentorMatch.Local  '
+    });
+    expect(result.ADMIN_EMAIL).toBe('admin.test@mentormatch.local');
+  });
 });
+

@@ -84,6 +84,7 @@ This idempotent script creates:
 ## Documentation
 
 - [`docs/API.md`](docs/API.md): Comprehensive API reference for all backend endpoints.
+- [`docs/ADMIN_ACCESS.md`](docs/ADMIN_ACCESS.md): Production administrator management, diagnosis (`admin:check`), and password reset (`admin:reset`) guide.
 - [`docs/BRAND.md`](docs/BRAND.md): Brand mark specifications, color token contrast, and visual guidelines.
 - [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md): Comprehensive security audit matrix, threat model, and verified controls.
 - [`docs/IMAGE_CREDITS.md`](docs/IMAGE_CREDITS.md): Editorial image credits, licensing, and asset provenance.

@@ -183,6 +183,6 @@ Complete all checklist items before opening public registrations:
   - Subscribe to `order.paid` and `payment.captured`.
   - Copy Webhook Secret and set `RAZORPAY_WEBHOOK_SECRET` in production `.env` / Secrets Manager.
 - [ ] **Transactional Email:** Verify SMTP credentials with AWS SES or SendGrid. Send a test email and verify delivery in inbox (not spam).
-- [ ] **Admin Account:** Verify login with production admin email and change password immediately.
+- [ ] **Admin Account & Health Status:** Run `docker compose -f docker-compose.prod.yml exec backend npm run admin:check` to ensure no hidden characters, successful database connectivity, and bcrypt password match (`MATCH`). Reset password securely via `admin:reset` if needed (see [`docs/ADMIN_ACCESS.md`](ADMIN_ACCESS.md)).
 - [ ] **Backups:** Ensure automated daily backups are enabled for MongoDB Atlas or standalone MongoDB volume.
 - [ ] **Monitoring & Alerts:** Ensure Prometheus and Grafana are operational and alerts notify via email or Slack.

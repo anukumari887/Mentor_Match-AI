@@ -51,6 +51,30 @@ const verifyEmailSchema = z.object({
   token: z.string().trim().min(1, 'Verification token is required')
 }).strict();
 
+function checkPasswordRules(password) {
+  if (typeof password !== 'string') {
+    return { valid: false, message: 'Password must be a string' };
+  }
+  if (password.length < 8) {
+    return { valid: false, message: 'Password must be at least 8 characters long' };
+  }
+  if (Buffer.byteLength(password, 'utf8') > 72) {
+    return { valid: false, message: 'Password must not exceed 72 bytes' };
+  }
+  if (COMMON_PASSWORDS.has(password.toLowerCase())) {
+    return { valid: false, message: 'This password is too common. Please choose a more secure password.' };
+  }
+  return { valid: true };
+}
+
+function detectHiddenCharacters(val) {
+  if (typeof val !== 'string') return false;
+  if (val.includes('\r') || val.includes('\n')) return true;
+  if (val !== val.trim()) return true;
+  if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) return true;
+  return false;
+}
+
 module.exports = {
   passwordValidator,
   registerSchema,
@@ -59,5 +83,8 @@ module.exports = {
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyEmailSchema,
-  COMMON_PASSWORDS
+  COMMON_PASSWORDS,
+  checkPasswordRules,
+  detectHiddenCharacters
 };
+
