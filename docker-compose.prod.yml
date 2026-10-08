@@ -83,8 +83,8 @@ services:
       - EMAIL_MODE=${EMAIL_MODE:-demo}
       - EMAIL_VERIFICATION_REQUIRED=${EMAIL_VERIFICATION_REQUIRED:-true}
       - PUBLIC_APP_URL=${PUBLIC_APP_URL:-https://mentormatch.example.com}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@mentormatch.ai}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-ChangeMeProd123!}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admins@matchmentor.ai}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-mentor998}
     depends_on:
       mongo:
         condition: service_healthy
