@@ -1,6 +1,6 @@
 # Mentor-Match AI
 
-Mentor-Match AI is a full-stack web platform where learners find their best-fit mentor through an intelligent recommendation engine, book 1-to-1 sessions with slot-conflict protection, complete secure payments with automatic platform commission calculation, join real-time browser-based video calls via WebRTC, and submit verified session reviews.
+Mentor-Match AI is a full-stack web platform where learners find their best-fit mentor through an intelligent recommendation engine, book 1-to-1 sessions with slot-conflict protection, complete secure payments with automatic platform commission calculation, join real-time browser-based video calls via WebRTC, and submit verified session reviews. The site operates in demo mode until `EMAIL_MODE=live` is configured.
 
 ---
 

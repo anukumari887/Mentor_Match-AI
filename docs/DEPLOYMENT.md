@@ -43,6 +43,7 @@ All production secrets should be set in `.env` (Path A) or AWS Secrets Manager (
 | `SMTP_USER` | SMTP username | Provider credentials |
 | `SMTP_PASS` | SMTP password / API token | Provider API key |
 | `EMAIL_FROM` | Verified sender address | `"Mentor-Match AI" <notifications@mentormatch.example.com>` |
+| `EMAIL_MODE` | Email mode ("demo" or "live") | `demo` (no real emails/verification) or `live` (production SMTP) |
 | `PUBLIC_APP_URL` | Canonical frontend web URL | `https://mentormatch.example.com` (Used for password reset links & emails; startup rejects localhost in production) |
 | `EMAIL_VERIFICATION_REQUIRED` | Block unverified users from bookings, payments, and messaging | `true` (default: `true`, set to `false` for emergency SMTP bypass) |
 | `CHAT_EMAIL_THROTTLE_MINUTES` | Minimum minutes between offline email alerts per conversation | `10` (default: `10`, range: `1` to `120`) |

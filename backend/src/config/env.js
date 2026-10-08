@@ -44,6 +44,7 @@ const envSchema = z.object({
   METRICS_TOKEN: z.string().optional().default(''),
   CHAT_VALIDITY_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   CHAT_EMAIL_THROTTLE_MINUTES: z.coerce.number().int().min(1).max(120).default(10),
+  EMAIL_MODE: z.enum(['demo', 'live']).default('demo'),
   EMAIL_VERIFICATION_REQUIRED: z.preprocess((val) => {
     if (typeof val === 'boolean') return val;
     if (typeof val === 'string') {
@@ -57,6 +58,10 @@ const envSchema = z.object({
 });
 
 function validateEnv(rawEnv = process.env) {
+  if (!rawEnv.EMAIL_MODE) {
+    console.warn('Warning: EMAIL_MODE environment variable is not set; defaulting to "demo"');
+  }
+
   const result = envSchema.safeParse(rawEnv);
 
   if (!result.success) {
@@ -84,6 +89,15 @@ function validateEnv(rawEnv = process.env) {
     }
     if (!env.PUBLIC_APP_URL || env.PUBLIC_APP_URL.includes('localhost') || !env.PUBLIC_APP_URL.startsWith('https://')) {
       throw new Error('Production safety check failed: PUBLIC_APP_URL must be a valid https URL and cannot be localhost in production');
+    }
+    if (env.EMAIL_MODE === 'live') {
+      if (!env.SMTP_HOST || env.SMTP_HOST === 'mailpit' || env.SMTP_HOST === 'localhost' || env.SMTP_HOST === '127.0.0.1') {
+        throw new Error('Production safety check failed: SMTP_HOST cannot be mailpit or localhost in live mode');
+      }
+    } else {
+      if (env.SMTP_HOST === 'mailpit' || env.SMTP_HOST === 'localhost' || env.SMTP_HOST === '127.0.0.1') {
+        console.warn('Warning: SMTP_HOST is set to mailpit/localhost, but EMAIL_MODE is "demo". Live email delivery is disabled.');
+      }
     }
   }
 

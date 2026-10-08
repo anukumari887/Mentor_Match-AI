@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, LockKeyhole } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePublicConfig } from '../contexts/ConfigContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import ResponsiveImage from '../components/ResponsiveImage';
@@ -11,6 +12,7 @@ import { IconChoiceLearner, IconChoiceMentor } from '../components/Illustrations
 export default function AuthPage({ mode }) {
   const isRegister = mode === 'register';
   const { user, loading, login, register } = useAuth();
+  const { emailMode } = usePublicConfig();
   const location = useLocation();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'learner' });
@@ -148,7 +150,9 @@ export default function AuthPage({ mode }) {
             />
             {isRegister && (
               <p className="mt-1.5 text-xs text-ink-muted">
-                We will send you a link to confirm this email.
+                {emailMode === 'demo'
+                  ? 'Demo mode: no confirmation email is sent.'
+                  : 'We will send you a link to confirm this email.'}
               </p>
             )}
           </div>

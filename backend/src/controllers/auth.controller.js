@@ -22,6 +22,7 @@ const {
 } = require('../services/email');
 const { validateRegistrationEmail } = require('../utils/emailValidation');
 const { AppError } = require('../utils/errors');
+const { env } = require('../config/env');
 const logger = require('../config/logger');
 
 async function register(req, res, next) {
@@ -41,7 +42,10 @@ async function register(req, res, next) {
     // Hash password with bcryptjs cost 12
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create user record with emailVerified: false
+    const isDemo = env.EMAIL_MODE === 'demo';
+    const now = new Date();
+
+    // Create user record
     const user = await User.create({
       name,
       email,
@@ -49,7 +53,8 @@ async function register(req, res, next) {
       role,
       isActive: true,
       tokenVersion: 0,
-      emailVerified: false
+      emailVerified: isDemo ? true : false,
+      ...(isDemo ? { emailVerifiedAt: now, emailVerifiedVia: 'demo' } : {})
     });
 
     // Create corresponding empty profile
@@ -61,21 +66,23 @@ async function register(req, res, next) {
       profile = formatMentorProfile(profile);
     }
 
-    // Issue email verification token (32 bytes hex, stored only as SHA-256 hash)
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    if (!isDemo) {
+      // Issue email verification token (32 bytes hex, stored only as SHA-256 hash)
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await EmailVerification.create({
-      userId: user._id,
-      tokenHash,
-      expiresAt
-    });
+      await EmailVerification.create({
+        userId: user._id,
+        tokenHash,
+        expiresAt
+      });
 
-    // Send verification email in background; never block registration if email fails
-    sendVerificationEmail(user, verificationToken).catch((error) => {
-      logger.warn({ message: error.message }, 'Failed to send verification email on registration');
-    });
+      // Send verification email in background; never block registration if email fails
+      sendVerificationEmail(user, verificationToken).catch((error) => {
+        logger.warn({ message: error.message }, 'Failed to send verification email on registration');
+      });
+    }
 
     // Generate JWT and set secure cookie
     const token = generateToken({
@@ -92,7 +99,7 @@ async function register(req, res, next) {
         name: user.name,
         email: user.email,
         role: user.role,
-        emailVerified: false
+        emailVerified: isDemo ? true : false
       },
       profile
     });
@@ -373,6 +380,12 @@ async function resetPassword(req, res, next) {
 
 async function verifyEmail(req, res, next) {
   try {
+    if (env.EMAIL_MODE === 'demo') {
+      return res.status(200).json({
+        message: 'Email verification is turned off in demo mode.'
+      });
+    }
+
     const { token } = verifyEmailSchema.parse(req.body);
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
@@ -430,6 +443,12 @@ async function verifyEmail(req, res, next) {
 
 async function resendVerification(req, res, next) {
   try {
+    if (env.EMAIL_MODE === 'demo') {
+      return res.status(200).json({
+        message: 'Email verification is turned off in demo mode.'
+      });
+    }
+
     const user = await User.findById(req.user._id);
     if (!user) {
       return next(new AppError('User not found.', 404, 'NOT_FOUND'));

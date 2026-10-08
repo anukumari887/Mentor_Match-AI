@@ -52,6 +52,10 @@ async function validateEmailDomain(email) {
 }
 
 async function validateRegistrationEmail(email, isProduction = false) {
+  const { env } = require('../config/env');
+  if (env.EMAIL_MODE === 'demo') {
+    return;
+  }
   if (!isProduction) return;
   const result = await validateEmailDomain(email);
   if (!result.valid) {

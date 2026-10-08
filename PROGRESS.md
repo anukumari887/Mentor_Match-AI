@@ -1153,6 +1153,100 @@ This file tracks the real progress of building the Mentor-Match AI platform phas
 - **Frontend Production Bundle Build:** `npm --prefix frontend run build` -> `built in 11.66s`
 - **ML Service Pytest (in Docker):** `docker exec mentormatch-ml python -m pytest -q tests` -> `8 passed, 1 warning in 2.39s`
 
+---
+
+## Phase: Email Demo Mode (`EMAIL_MODE="demo"` | `"live"`)
+
+### 1. What Was Built
+1. **Environment Configuration & Safety Checks:**
+   - Added `EMAIL_MODE: z.enum(['demo', 'live']).default('demo')` to `backend/src/config/env.js`.
+   - Emits a warning if `EMAIL_MODE` is not explicitly provided in environment, defaulting safely to `demo`.
+   - Production guardrail in `env.js`: when `EMAIL_MODE === 'live'`, refuses `SMTP_HOST=mailpit`, `localhost`, or `127.0.0.1`. When `EMAIL_MODE === 'demo'`, permits `mailpit`/`localhost` with an informational warning that live email delivery is disabled.
+   - Updated `.env.example`, `.env.production.example`, and `docker-compose.prod.yml` to specify `EMAIL_MODE=demo`.
+2. **Auto-Verified Demo Registration & Domain Validation Bypass:**
+   - In `backend/src/utils/emailValidation.js`: skips DNS MX lookup and disposable domain blocklist when `EMAIL_MODE === 'demo'`, accepting any well-formed email address.
+   - In `backend/src/controllers/auth.controller.js`: on `register`, when `EMAIL_MODE === 'demo'`, users are immediately auto-verified with `emailVerified: true`, `emailVerifiedAt: now`, and `emailVerifiedVia: 'demo'`. Skips generating single-use verification tokens in `EmailVerification` collection and skips sending verification emails.
+   - Verification routes: `POST /api/auth/verify-email` and `POST /api/auth/resend-verification` in demo mode immediately return HTTP 200 with `{ message: "Email verification is turned off in demo mode." }` without errors.
+3. **Route Guard Middleware Bypass:**
+   - In `backend/src/middlewares/auth.js`: `requireEmailVerified` middleware calls `next()` immediately when `EMAIL_MODE === 'demo'`.
+4. **Safe Demo Email Transporter & Logging:**
+   - In `backend/src/services/email.js`: configured `demoTransporter` using `jsonTransport: true` (no-op).
+   - In demo mode, `sendEmail` logs only `{ emailType, recipientDomain }` at info level: `"demo email not sent"`. Strictly prevents logging email body, full email address, verification/reset tokens, or links.
+   - Callers across the service tag outgoing emails with semantic `type` (e.g. `booking_confirmation`, `password_reset`, `verification`, etc.).
+5. **Public Configuration Endpoint & Frontend Integration:**
+   - Added public route `GET /api/public-config` returning `{ emailMode: env.EMAIL_MODE }` with `Cache-Control: public, max-age=300`.
+   - Created `frontend/src/services/publicConfig.js` and `frontend/src/contexts/ConfigContext.jsx` with singleton cached fetch and safe `{ emailMode: 'live' }` fallback on network error.
+   - Wrapped `<ConfigProvider>` at top-level in `frontend/src/App.jsx`.
+   - `frontend/src/components/VerificationBanner.jsx`: suppresses banner display entirely when `emailMode === 'demo'`.
+   - `frontend/src/pages/AuthPage.jsx`: shows `"Demo mode: no confirmation email is sent."` below registration email input.
+   - `frontend/src/pages/ForgotPasswordPage.jsx`: shows `"Demo mode: reset emails are not delivered. If you cannot log in, contact the site owner."` in demo mode.
+6. **Documentation:**
+   - Created comprehensive `docs/EMAIL_SETUP.md` explaining demo mode operation, live mode SMTP requirements (SPF, DKIM, DMARC), and zero-downtime transition instructions.
+   - Updated `README.md` and `docs/DEPLOYMENT.md` detailing `EMAIL_MODE`.
+
+### 2. Verifiable Test Proofs
+1. **Backend Test Suite (22 suites, 160 tests passed):**
+   - Command: `npm --prefix backend test`
+   - Real Output: `Test Suites: 22 passed, 22 total. Tests: 160 passed, 160 total.`
+2. **Backend Linting:**
+   - Command: `npm --prefix backend run lint`
+   - Real Output: `0 problems (0 errors, 0 warnings)`
+3. **Frontend Test Suite (27 files, 87 tests passed):**
+   - Command: `npm --prefix frontend test -- --run`
+   - Real Output: `Test Files: 27 passed, 27 total. Tests: 87 passed, 87 total.`
+4. **Frontend Production Build:**
+   - Command: `npm --prefix frontend run build`
+   - Real Output: `✓ built in 8.83s` (0 errors)
+5. **Local Production Docker Compose Verification (`docker compose -f docker-compose.prod.yml` with `EMAIL_MODE=demo`):**
+   - Command: `docker compose --env-file .env.production -f docker-compose.prod.yml up -d`
+   - Real Output:
+     - `mentormatch-mongo-prod`: healthy (port 27017)
+     - `mentormatch-redis-prod`: healthy (port 6379)
+     - `mentormatch-ml-prod`: healthy (port 8000)
+     - `mentormatch-backend-prod`: healthy (port 5000)
+     - `mentormatch-frontend-prod`: started / HTTP 200 (port 3000)
+   - Real End-to-End Test Output (`node scratch/test-prod-demo-e2e.js`):
+     - `GET /api/public-config`: returned `{ emailMode: "demo" }`
+     - Mentor registered in demo mode: returned `emailVerified: true`, no email sent
+     - Mentor set profile and availability: HTTP 200
+     - Admin approved mentor: HTTP 200
+     - Learner registered in demo mode: returned `emailVerified: true`, no email sent
+     - Learner fetched mentor slots: 122 slots returned
+     - Learner booked slot: HTTP 201 Created with zero email verification prompts
+     - Learner created chat: HTTP 200 OK with zero email verification prompts
+     - Learner sent message: HTTP 201 Created with zero email verification prompts
+     - `POST /api/auth/verify-email`: returned 200 `"Email verification is turned off in demo mode."`
+     - `POST /api/auth/resend-verification`: returned 200 `"Email verification is turned off in demo mode."`
+
+### 3. File Change Ledger (`git diff --stat main`)
+| File | Reason |
+|---|---|
+| `.env.example` | Added `EMAIL_MODE=demo` variable template |
+| `.env.production.example` | Added `EMAIL_MODE=demo` with descriptive live-mode migration comment |
+| `README.md` | Documented that platform operates in demo mode by default until live SMTP is configured |
+| `backend/src/config/env.js` | Added `EMAIL_MODE` schema, defaulting warning, and production SMTP safety guard |
+| `backend/src/controllers/auth.controller.js` | Implemented auto-verified registration in demo mode and 200 response on verification endpoints |
+| `backend/src/middlewares/auth.js` | Bypassed `requireEmailVerified` middleware when `EMAIL_MODE === 'demo'` |
+| `backend/src/models/User.js` | Added `emailVerifiedVia` schema field to record verification source |
+| `backend/src/routes/auth.routes.js` | Added demo bypass to `resend-verification` route |
+| `backend/src/routes/index.js` | Registered public `GET /api/public-config` endpoint |
+| `backend/src/services/email.js` | Configured demo JSON transporter and sanitized logging without sensitive content |
+| `backend/src/utils/emailValidation.js` | Bypassed DNS MX and disposable domain validation in demo mode |
+| `backend/tests/email-demo-mode.test.js` | Comprehensive integration tests for demo mode registration, booking, chat, and guards |
+| `backend/tests/email-verification.test.js` | Preserved live email verification test coverage by explicitly setting live mode in suite |
+| `docker-compose.prod.yml` | Added `EMAIL_MODE`, `EMAIL_VERIFICATION_REQUIRED`, and `PUBLIC_APP_URL` to backend service |
+| `docs/DEPLOYMENT.md` | Added `EMAIL_MODE` to production deployment environment variables table |
+| `docs/EMAIL_SETUP.md` | Comprehensive guide on demo vs live modes, caveats, and zero-downtime transition |
+| `frontend/src/App.jsx` | Wrapped application in `ConfigProvider` |
+| `frontend/src/components/VerificationBanner.jsx` | Suppressed verification banner when `emailMode === 'demo'` |
+| `frontend/src/contexts/ConfigContext.jsx` | Shared React context and hook for platform public configuration |
+| `frontend/src/pages/AuthPage.jsx` | Added demo mode registration notice that no confirmation email is sent |
+| `frontend/src/pages/ForgotPasswordPage.jsx` | Added demo mode notice that reset emails are not delivered |
+| `frontend/src/services/publicConfig.js` | Cached client API service for `GET /api/public-config` |
+| `frontend/src/test/emailDemoMode.test.jsx` | Vitest component tests verifying banner suppression and demo copy |
+| `PROGRESS.md` | Logged phase audit, implementation details, verifiable test proofs, and file change ledger |
+
+
 
 
 

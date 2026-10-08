@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
     },
     emailVerifiedAt: {
       type: Date
+    },
+    emailVerifiedVia: {
+      type: String,
+      default: null
     }
   },
   {

@@ -80,6 +80,9 @@ services:
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
       - EMAIL_FROM=${EMAIL_FROM:-Mentor-Match <no-reply@mentormatch.ai>}
+      - EMAIL_MODE=${EMAIL_MODE:-demo}
+      - EMAIL_VERIFICATION_REQUIRED=${EMAIL_VERIFICATION_REQUIRED:-true}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL:-https://mentormatch.example.com}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@mentormatch.ai}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-ChangeMeProd123!}
     depends_on:

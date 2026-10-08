@@ -6,11 +6,15 @@ const { generateIcsCalendar } = require('../utils/calendar');
 
 const isSecure = env.SMTP_SECURE !== undefined ? env.SMTP_SECURE : env.SMTP_PORT === 465;
 
-const transporter = nodemailer.createTransport({
+const liveTransporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: env.SMTP_PORT,
   secure: isSecure,
   ...(env.SMTP_USER ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASS } } : {})
+});
+
+const demoTransporter = nodemailer.createTransport({
+  jsonTransport: true
 });
 
 function escapeHtml(value) {
@@ -45,10 +49,33 @@ function formatRupeesFromPaise(paise) {
   return `₹${new Intl.NumberFormat('en-IN').format(rs)}`;
 }
 
-async function sendEmail({ to, subject, text, html, attachments }) {
+async function sendEmail({ to, subject, text, html, attachments, type }) {
   if (!to) return;
+  const isDemo = env.EMAIL_MODE === 'demo';
+  const recipientDomain = (to.split('@')[1] || '').trim().toLowerCase() || 'unknown';
+  const emailType = type || subject || 'general';
+
+  if (isDemo) {
+    try {
+      logger.info({ emailType, recipientDomain }, 'demo email not sent');
+      const info = await demoTransporter.sendMail({
+        from: env.EMAIL_FROM,
+        to,
+        subject,
+        text,
+        html,
+        attachments
+      });
+      return info;
+    } catch (error) {
+      // In demo mode, email failure must never fail a request or a job, and never log full address
+      logger.warn({ emailType, recipientDomain }, 'demo email not sent: transport error');
+      return;
+    }
+  }
+
   try {
-    const info = await transporter.sendMail({
+    const info = await liveTransporter.sendMail({
       from: env.EMAIL_FROM,
       to,
       subject,
@@ -90,7 +117,7 @@ async function sendVerificationEmail(user, token) {
       </p>
     </div>
   `;
-  return sendEmail({ to: user.email, subject, text, html });
+  return sendEmail({ to: user.email, subject, text, html, type: 'verification' });
 }
 
 // 2. Chat Message Notification Email
@@ -120,7 +147,7 @@ async function sendChatMessageEmail({ recipient, senderName, conversationId, mes
       </p>
     </div>
   `;
-  return sendEmail({ to: recipient?.email, subject, text, html });
+  return sendEmail({ to: recipient?.email, subject, text, html, type: 'chat_notification' });
 }
 
 // 3. Refund Pending Email (to Learner)
@@ -147,7 +174,7 @@ async function sendRefundPendingEmail({ learner, booking, payment }) {
       </p>
     </div>
   `;
-  return sendEmail({ to: learner?.email, subject, text, html });
+  return sendEmail({ to: learner?.email, subject, text, html, type: 'refund_pending' });
 }
 
 // 4. Refund Completed Email (to Learner)
@@ -176,7 +203,7 @@ async function sendRefundCompletedEmail({ learner, booking, payment }) {
       </p>
     </div>
   `;
-  return sendEmail({ to: learner?.email, subject, text, html });
+  return sendEmail({ to: learner?.email, subject, text, html, type: 'refund_completed' });
 }
 
 // 5. Booking Confirmation Emails (with calendar .ics attachment)
@@ -228,14 +255,16 @@ async function sendBookingConfirmation(booking) {
       subject: 'Your Mentor-Match session is confirmed',
       text: `Hello ${learner?.name || 'there'},\n\nYour session with ${mentor?.name || 'your mentor'} is confirmed for ${timeFormatted}.\nDuration: 60 minutes\nJoin room: ${sessionUrl}\nAdd to calendar: ${calendarUrl}\n\nYou can check your camera and microphone in Settings.`,
       html: buildHtml(learner?.name || 'there', mentor?.name || 'your mentor', calendarUrl),
-      attachments: [{ filename: `session-${bookingId}.ics`, content: learnerIcs, contentType: 'text/calendar; charset=utf-8' }]
+      attachments: [{ filename: `session-${bookingId}.ics`, content: learnerIcs, contentType: 'text/calendar; charset=utf-8' }],
+      type: 'booking_confirmation'
     }),
     sendEmail({
       to: mentor?.email,
       subject: 'Your Mentor-Match session is confirmed',
       text: `Hello ${mentor?.name || 'there'},\n\nYour session with ${learner?.name || 'your learner'} is confirmed for ${timeFormatted}.\nDuration: 60 minutes\nJoin room: ${sessionUrl}\nAdd to calendar: ${calendarUrl}\n\nYou can check your camera and microphone in Settings.`,
       html: buildHtml(mentor?.name || 'there', learner?.name || 'your learner', calendarUrl),
-      attachments: [{ filename: `session-${bookingId}.ics`, content: mentorIcs, contentType: 'text/calendar; charset=utf-8' }]
+      attachments: [{ filename: `session-${bookingId}.ics`, content: mentorIcs, contentType: 'text/calendar; charset=utf-8' }],
+      type: 'booking_confirmation'
     })
   ]);
 }
@@ -262,7 +291,8 @@ function sendBookingCancellation(booking, recipientId) {
               Mentor-Match Technical Mentorship Platform
             </p>
           </div>
-        `
+        `,
+        type: 'booking_cancellation'
       })
     );
 }
@@ -321,7 +351,8 @@ async function sendSessionReminder(booking, recipient, otherUserName, hoursAhead
     subject,
     text,
     html,
-    attachments: [{ filename: `session-${bookingId}.ics`, content: icsContent, contentType: 'text/calendar; charset=utf-8' }]
+    attachments: [{ filename: `session-${bookingId}.ics`, content: icsContent, contentType: 'text/calendar; charset=utf-8' }],
+    type: 'session_reminder'
   });
 }
 
@@ -347,7 +378,7 @@ function sendReviewRequest(booking, learner) {
       </p>
     </div>
   `;
-  return sendEmail({ to: learner?.email, subject, text, html });
+  return sendEmail({ to: learner?.email, subject, text, html, type: 'review_request' });
 }
 
 // 9. Password Changed Email
@@ -374,7 +405,7 @@ async function sendPasswordChangedEmail(user) {
       </p>
     </div>
   `;
-  return sendEmail({ to: user.email, subject, text, html });
+  return sendEmail({ to: user.email, subject, text, html, type: 'password_changed' });
 }
 
 // 10. Password Reset Email
@@ -405,7 +436,7 @@ async function sendPasswordResetEmail(user, token) {
       </p>
     </div>
   `;
-  return sendEmail({ to: user.email, subject, text, html });
+  return sendEmail({ to: user.email, subject, text, html, type: 'password_reset' });
 }
 
 // 11. Admin Mentor Review Notification
@@ -431,7 +462,7 @@ async function sendAdminMentorReviewEmail(mentorUser) {
       </p>
     </div>
   `;
-  return sendEmail({ to: env.ADMIN_EMAIL, subject, text, html });
+  return sendEmail({ to: env.ADMIN_EMAIL, subject, text, html, type: 'admin_mentor_review' });
 }
 
 module.exports = {

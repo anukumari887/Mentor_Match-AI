@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, Mail } from 'lucide-react';
+import { usePublicConfig } from '../contexts/ConfigContext';
 import api from '../services/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -8,6 +9,7 @@ import Logo from '../components/Logo';
 import ResponsiveImage from '../components/ResponsiveImage';
 
 export default function ForgotPasswordPage() {
+  const { emailMode } = usePublicConfig();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -45,6 +47,11 @@ export default function ForgotPasswordPage() {
               <p className="mt-1 text-xs text-ink-muted">
                 Enter your account email address and we will send you a secure link to reset your password.
               </p>
+              {emailMode === 'demo' && (
+                <p className="mt-2 text-xs text-ink-muted">
+                  Demo mode: reset emails are not delivered. If you cannot log in, contact the site owner.
+                </p>
+              )}
             </div>
           </div>
 

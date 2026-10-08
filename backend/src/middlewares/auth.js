@@ -62,6 +62,9 @@ function requireRole(...roles) {
 
 function requireEmailVerified(req, res, next) {
   const { env } = require('../config/env');
+  if (env.EMAIL_MODE === 'demo') {
+    return next();
+  }
   const isRequired = env.EMAIL_VERIFICATION_REQUIRED !== false && env.EMAIL_VERIFICATION_REQUIRED !== 'false';
   if (!isRequired) {
     return next();

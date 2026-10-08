@@ -20,7 +20,21 @@ router.get('/me', requireAuth, authController.getMe);
 
 // Email verification
 router.post('/verify-email', verifyEmailLimiter, authController.verifyEmail);
-router.post('/resend-verification', requireAuth, resendVerificationLimiter, authController.resendVerification);
+router.post(
+  '/resend-verification',
+  (req, res, next) => {
+    const { env } = require('../config/env');
+    if (env.EMAIL_MODE === 'demo') {
+      return res.status(200).json({
+        message: 'Email verification is turned off in demo mode.'
+      });
+    }
+    next();
+  },
+  requireAuth,
+  resendVerificationLimiter,
+  authController.resendVerification
+);
 
 // Password settings & lifecycle
 router.post('/change-password', requireAuth, changePasswordLimiter, authController.changePassword);

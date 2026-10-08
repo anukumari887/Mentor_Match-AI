@@ -1,4 +1,5 @@
 const express = require('express');
+const { env } = require('../config/env');
 const healthRoutes = require('./health');
 const authRoutes = require('./auth.routes');
 const profileRoutes = require('./profile.routes');
@@ -12,6 +13,13 @@ const complaintRoutes = require('./complaint.routes');
 const chatRoutes = require('./chat.routes');
 
 const router = express.Router();
+
+router.get('/public-config', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300');
+  res.status(200).json({
+    emailMode: env.EMAIL_MODE
+  });
+});
 
 router.use('/', healthRoutes);
 router.use('/auth', authRoutes);

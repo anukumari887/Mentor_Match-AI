@@ -57,7 +57,19 @@ function makeAuthCookie(userId, role = 'learner') {
   return `token=${token}`;
 }
 
+const { env } = require('../src/config/env');
+
 describe('Email Verification & Domain Validation Rules', () => {
+  const origEmailMode = env.EMAIL_MODE;
+
+  beforeAll(() => {
+    env.EMAIL_MODE = 'live';
+  });
+
+  afterAll(() => {
+    env.EMAIL_MODE = origEmailMode;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });

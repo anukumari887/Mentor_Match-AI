@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Mail, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePublicConfig } from '../contexts/ConfigContext';
 import api from '../services/api';
 import Toast from './Toast';
 
 export default function VerificationBanner() {
   const { user } = useAuth();
+  const { emailMode } = usePublicConfig();
   const [countdown, setCountdown] = useState(0);
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState(null);
@@ -18,6 +20,11 @@ export default function VerificationBanner() {
     }, 1000);
     return () => clearInterval(interval);
   }, [countdown]);
+
+  // In demo mode, never show the verification banner
+  if (emailMode === 'demo') {
+    return null;
+  }
 
   // Only show for unverified learners and mentors (not admins, not verified users)
   if (!user || user.role === 'admin' || user.emailVerified) {
